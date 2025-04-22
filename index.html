@@ -515,14 +515,104 @@ document.addEventListener("DOMContentLoaded", function() {
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // Set authentication persistence
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+// أضف هذا الكود بعد تهيئة Firebase
+db.enablePersistence({ synchronizeTabs: true })
   .then(() => {
-    console.log("Authentication persistence set to LOCAL");
+    console.log("تم تفعيل وضع الاستمرارية المحلية");
   })
-  .catch((error) => {
-    console.error("Error setting authentication persistence:", error);
+  .catch((err) => {
+    console.error("خطأ في تفعيل وضع الاستمرارية:", err);
   });
+
+// مراقبة حالة الاتصال بـ Firestore
+firebase.firestore().enableNetwork()
+  .then(() => {
+    console.log("تم تفعيل الاتصال بـ Firestore");
+  });
+
+// إضافة مستمع لحالة الاتصال
+function initNetworkMonitoring() {
+  const connectedRef = firebase.database().ref(".info/connected");
+  connectedRef.on("value", (snap) => {
+    if (snap.val() === true) {
+      console.log("متصل بـ Firebase");
+      // محاولة إعادة تحميل بيانات المستخدم عند استعادة الاتصال
+      const uid = sessionStorage.getItem("currentUserUid");
+      if (uid) {
+        reloadUserData(uid);
+      }
+    } else {
+      console.log("غير متصل بـ Firebase");
+      // يمكن إظهار إشعار للمستخدم هنا
+      const notification = document.createElement("div");
+      notification.className = "notification offline-notification";
+      notification.textContent = document.documentElement.lang === "ar" ? 
+        "أنت حاليًا غير متصل بالإنترنت. سيتم تخزين العمليات محليًا ومزامنتها عند استعادة الاتصال." :
+        "You are currently offline. Operations will be stored locally and synced when connection is restored.";
+      document.body.appendChild(notification);
+      
+      // إزالة الإشعار بعد 5 ثوانٍ
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 5000);
+    }
+  });
+}
+
+// دالة لإعادة تحميل بيانات المستخدم
+function reloadUserData(uid) {
+  db.collection("users").doc(uid).get()
+    .then(doc => {
+      if (doc.exists) {
+        const userData = doc.data();
+        loadUserData({
+          name: userData.name,
+          email: userData.email,
+          balance: userData.balance,
+          cardNumber: userData.cardNumber,
+          uid: uid
+        });
+      }
+    })
+    .catch(error => {
+      console.error("خطأ في إعادة تحميل بيانات المستخدم:", error);
+    });
+}
+
+
+
+// إضافة هذه الدالة في بداية الكود
+function initAuthPersistence() {
+    // محاولة استعادة معلومات المستخدم من التخزين المحلي
+    const savedEmail = localStorage.getItem("userEmail");
+    const savedUid = localStorage.getItem("userUid");
+    
+    if (savedEmail && savedUid) {
+        console.log("تم العثور على معلومات المستخدم المحفوظة محليًا:", savedEmail);
+        
+        // إظهار رسالة تحميل
+        const loadingMessage = document.createElement("div");
+        loadingMessage.className = "loading-message";
+        loadingMessage.textContent = document.documentElement.lang === "ar" ? 
+            "جاري استعادة الجلسة..." : "Restoring your session...";
+        document.body.appendChild(loadingMessage);
+        
+        // تحقق مما إذا كان المستخدم مسجل دخوله بالفعل
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            console.log("المستخدم مسجل دخوله بالفعل:", currentUser.email);
+            document.body.removeChild(loadingMessage);
+        } else {
+            console.log("محاولة استعادة جلسة المستخدم...");
+            // في حالة عدم وجود مستخدم حالي، يمكننا محاولة تسجيل الدخول تلقائيًا
+            // هذا قد يتطلب أن يكون المستخدم قد حفظ كلمة المرور الخاصة به في المتصفح
+            // أو يمكن استخدام رمز مميز للتذكر (لم يتم تنفيذه هنا)
+        }
+    }
+}
+
 
     // DOM Elements
     const loginForm = document.getElementById("loginForm");
@@ -596,9 +686,20 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     });
 
     auth.onAuthStateChanged(user => {
+    // إزالة رسالة التحميل إذا كانت موجودة
+    const loadingMessage = document.querySelector(".loading-message");
+    if (loadingMessage) {
+        document.body.removeChild(loadingMessage);
+    }
+
     console.log("تغيرت حالة المصادقة. المستخدم:", user);
     if (user) {
-        // المستخدم مسجل الدخول
+        // تخزين معلومات المستخدم محليًا للمساعدة في استمرارية الجلسة
+        localStorage.setItem("userEmail", user.email);
+        localStorage.setItem("userUid", user.uid);
+        sessionStorage.setItem("currentUserUid", user.uid);
+        
+        // محاولة تحميل بيانات المستخدم من Firestore
         console.log("محاولة تحميل بيانات المستخدم من Firestore");
         db.collection("users").doc(user.uid).get()
             .then(doc => {
@@ -638,16 +739,37 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
             })
             .catch(error => {
                 console.error("خطأ في جلب بيانات المستخدم:", error);
-                alert("حدث خطأ أثناء تحميل بيانات المستخدم");
+                
+                // محاولة استرجاع البيانات من التخزين المحلي في حالة الفشل
+                try {
+                    const cachedUserData = JSON.parse(localStorage.getItem("userData"));
+                    if (cachedUserData && cachedUserData.uid === user.uid) {
+                        console.log("استخدام البيانات المخزنة محليًا:", cachedUserData);
+                        loadUserData(cachedUserData);
+                        alert(document.documentElement.lang === "ar" ? 
+                              "تم تحميل البيانات المخزنة محليًا. بعض البيانات قد لا تكون محدثة." : 
+                              "Loaded cached data. Some information may not be up to date.");
+                    } else {
+                        alert("حدث خطأ أثناء تحميل بيانات المستخدم");
+                    }
+                } catch (e) {
+                    console.error("خطأ في استرجاع البيانات المخزنة محليًا:", e);
+                    alert("حدث خطأ أثناء تحميل بيانات المستخدم");
+                }
             });
     } else {
+        // حذف المعلومات المخزنة محليًا عند تسجيل الخروج
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("userUid");
+        sessionStorage.removeItem("currentUserUid");
+        
         // المستخدم غير مسجل الدخول
         console.log("المستخدم غير مسجل الدخول، عرض نموذج تسجيل الدخول");
         if (dashboard) dashboard.style.display = "none";
         if (loginForm) loginForm.style.display = "block";
         if (registerForm) registerForm.style.display = "none";
     }
-});    
+});
     // Functions
     function toggleForms(e) {
         e.preventDefault();
@@ -761,8 +883,101 @@ function handleLogin(e) {
             });
     }
 
-    function loadUserData(user) {
+// إضافة هذه الدالة للتعامل مع العمليات المعلقة
+function syncPendingOperations() {
+    if (!navigator.onLine) {
+        console.log("لا يمكن مزامنة العمليات المعلقة: غير متصل بالإنترنت");
+        return Promise.resolve();
+    }
+    
+    const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
+    if (pendingOperations.length === 0) {
+        console.log("لا توجد عمليات معلقة للمزامنة");
+        return Promise.resolve();
+    }
+    
+    console.log("بدء مزامنة العمليات المعلقة:", pendingOperations.length);
+    
+    const promises = pendingOperations.map((operation, index) => {
+        console.log(`معالجة العملية ${index + 1}/${pendingOperations.length}:`, operation);
+        
+        if (operation.type === "deposit") {
+            const userUid = operation.userUid;
+            const amount = operation.amount;
+            const userRef = db.collection("users").doc(userUid);
+            
+            return db.runTransaction((transaction) => {
+                return transaction.get(userRef).then((userDoc) => {
+                    if (!userDoc.exists) {
+                        throw "المستخدم غير موجود!";
+                    }
+                    
+                    const userData = userDoc.data();
+                    const newBalance = userData.balance + amount;
+                    
+                    transaction.update(userRef, { balance: newBalance });
+                    
+                    return { newBalance, index };
+                });
+            })
+            .then(({ newBalance, index }) => {
+                return addTransaction(userUid, "deposit", amount, null, "عملية متزامنة")
+                    .then(() => {
+                        console.log(`تمت مزامنة الإيداع رقم ${index + 1} بنجاح`);
+                        return index;
+                    });
+            });
+        } else if (operation.type === "transfer") {
+            // يمكن إضافة المنطق الخاص بمزامنة التحويلات هنا
+            console.log("مزامنة التحويلات غير مدعومة حاليًا");
+            return Promise.resolve(index);
+        }
+        
+        return Promise.resolve(index);
+    });
+    
+    return Promise.all(promises)
+        .then((completedIndices) => {
+            // إزالة العمليات المكتملة من القائمة
+            const newPendingOperations = pendingOperations.filter((_, index) => !completedIndices.includes(index));
+            localStorage.setItem("pendingOperations", JSON.stringify(newPendingOperations));
+            
+            console.log(`تمت مزامنة ${completedIndices.length} عملية بنجاح، تبقى ${newPendingOperations.length} عملية معلقة`);
+            
+            if (completedIndices.length > 0) {
+                // إعادة تحميل بيانات المستخدم لتحديث الواجهة
+                const userUid = sessionStorage.getItem("currentUserUid");
+                if (userUid) {
+                    reloadUserData(userUid);
+                }
+            }
+            
+            return completedIndices.length;
+        })
+        .catch((error) => {
+            console.error("خطأ أثناء مزامنة العمليات المعلقة:", error);
+            return 0;
+        });
+}
+
+// استدعاء دالة المزامنة عند استعادة الاتصال
+window.addEventListener('online', () => {
+    console.log("تمت استعادة الاتصال بالإنترنت");
+    syncPendingOperations().then((count) => {
+        if (count > 0) {
+            alert(document.documentElement.lang === "ar" ? 
+                  `تمت مزامنة ${count} عملية معلقة` : 
+                  `Successfully synced ${count} pending operations`);
+        }
+    });
+});
+
+// تعديل دالة loadUserData لتخزين البيانات محليًا
+function loadUserData(user) {
     console.log("جاري تحميل بيانات المستخدم في واجهة المستخدم:", user);
+    
+    // تخزين بيانات المستخدم محليًا للاستخدام عند عدم الاتصال
+    localStorage.setItem("userData", JSON.stringify(user));
     
     if (userNameDisplay) userNameDisplay.textContent = user.name;
     if (balanceAmount) balanceAmount.textContent = user.balance.toLocaleString();
@@ -771,7 +986,8 @@ function handleLogin(e) {
     
     // تخزين بيانات المستخدم للوصول السريع
     sessionStorage.setItem("currentUserUid", user.uid);
-    localStorage.setItem("userEmail", user.email); // إضافة تخزين البريد الإلكتروني محلياً
+    localStorage.setItem("userEmail", user.email);
+    localStorage.setItem("userUid", user.uid);
     
     loadRecentTransactions(user.uid);
     loadWalletBalances(user.uid);
@@ -785,60 +1001,124 @@ function handleLogin(e) {
         console.error("عنصر لوحة التحكم غير موجود!");
     }
 
-    // إضافة سجل تصحيح إضافي للتحقق من نجاح عملية تسجيل الدخول
+    // بعد تحميل البيانات، تحقق من وجود عمليات معلقة للمزامنة
+    if (navigator.onLine) {
+        syncPendingOperations();
+    }
+    
     console.log("تم تحميل بيانات المستخدم بنجاح وتم عرض لوحة التحكم");
 }
 
 function handleDeposit(e) {
-        e.preventDefault();
-        
-        const amount = parseFloat(document.getElementById("depositAmount").value);
-        if (isNaN(amount) || amount <= 0) {
-            alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
-            return;
-        }
-        
-        const userUid = sessionStorage.getItem("currentUserUid");
-        const userRef = db.collection("users").doc(userUid);
-        
-        // Use a transaction to update the balance
-        db.runTransaction((transaction) => {
-            return transaction.get(userRef).then((userDoc) => {
-                if (!userDoc.exists) {
-                    throw "User does not exist!";
-                }
-                
-                const userData = userDoc.data();
-                const newBalance = userData.balance + amount;
-                
-                transaction.update(userRef, { balance: newBalance });
-                
-                // Return the new balance for use in the next then()
-                return newBalance;
-            });
-        })
-        .then((newBalance) => {
-            // Add transaction record
-            addTransaction(userUid, "deposit", amount, null, null);
-            
-            // Update UI
-            balanceAmount.textContent = newBalance.toLocaleString();
-            
-            // Close modal and reset form
-            depositModal.style.display = "none";
-            document.getElementById("depositAmount").value = "";
-            
-            alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
-            
-            // Reload transactions
-            loadRecentTransactions(userUid);
-        })
-        .catch((error) => {
-            console.error("Transaction failed: ", error);
-            alert(error);
-        });
+    e.preventDefault();
+    
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+    if (isNaN(amount) || amount <= 0) {
+        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
+        return;
     }
-
+    
+    const userUid = sessionStorage.getItem("currentUserUid");
+    if (!userUid) {
+        alert(document.documentElement.lang === "ar" ? "يرجى تسجيل الدخول أولاً" : "Please login first");
+        return;
+    }
+    
+    // إظهار مؤشر التحميل
+    const loadingIndicator = document.createElement("div");
+    loadingIndicator.className = "loading-indicator";
+    loadingIndicator.textContent = document.documentElement.lang === "ar" ? "جاري معالجة الإيداع..." : "Processing deposit...";
+    depositModal.appendChild(loadingIndicator);
+    
+    const userRef = db.collection("users").doc(userUid);
+    
+    // التحقق من حالة الاتصال قبل محاولة الإيداع
+    const isOnline = window.navigator.onLine;
+    console.log("حالة الاتصال بالإنترنت:", isOnline ? "متصل" : "غير متصل");
+    
+    if (!isOnline) {
+        // في حالة عدم الاتصال، قم بتخزين العملية محليًا للمزامنة لاحقًا
+        const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
+        pendingOperations.push({
+            type: "deposit",
+            amount: amount,
+            userUid: userUid,
+            timestamp: Date.now()
+        });
+        localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations));
+        
+        // تحديث واجهة المستخدم مؤقتًا
+        const currentBalance = parseFloat(balanceAmount.textContent.replace(/,/g, "")) || 0;
+        balanceAmount.textContent = (currentBalance + amount).toLocaleString();
+        
+        // إزالة مؤشر التحميل
+        depositModal.removeChild(loadingIndicator);
+        depositModal.style.display = "none";
+        document.getElementById("depositAmount").value = "";
+        
+        alert(document.documentElement.lang === "ar" ? 
+              "تم حفظ الإيداع محليًا وسيتم مزامنته عند استعادة الاتصال" : 
+              "Deposit saved locally and will be synced when connection is restored");
+        return;
+    }
+    
+    // استخدام معاملة لتحديث الرصيد
+    db.runTransaction((transaction) => {
+        return transaction.get(userRef).then((userDoc) => {
+            if (!userDoc.exists) {
+                throw "المستخدم غير موجود!";
+            }
+            
+            const userData = userDoc.data();
+            const newBalance = userData.balance + amount;
+            
+            transaction.update(userRef, { balance: newBalance });
+            
+            return newBalance;
+        });
+    })
+    .then((newBalance) => {
+        // إضافة سجل المعاملة
+        return addTransaction(userUid, "deposit", amount, null, null)
+            .then(() => {
+                // تحديث واجهة المستخدم
+                balanceAmount.textContent = newBalance.toLocaleString();
+                
+                // إغلاق النافذة وإعادة تعيين النموذج
+                depositModal.removeChild(loadingIndicator);
+                depositModal.style.display = "none";
+                document.getElementById("depositAmount").value = "";
+                
+                alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
+                
+                // إعادة تحميل المعاملات
+                loadRecentTransactions(userUid);
+            });
+    })
+    .catch((error) => {
+        console.error("فشلت المعاملة: ", error);
+        depositModal.removeChild(loadingIndicator);
+        alert(error);
+        
+        // محاولة التخزين المحلي في حالة فشل الإيداع
+        try {
+            const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
+            pendingOperations.push({
+                type: "deposit",
+                amount: amount,
+                userUid: userUid,
+                timestamp: Date.now()
+            });
+            localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations));
+            
+            alert(document.documentElement.lang === "ar" ? 
+                  "تم حفظ الإيداع محليًا وسيتم مزامنته لاحقًا" : 
+                  "Deposit saved locally and will be synced later");
+        } catch (e) {
+            console.error("خطأ في تخزين العملية محليًا:", e);
+        }
+    });
+}
     function handleTransfer(e) {
         e.preventDefault();
         
@@ -936,6 +1216,88 @@ function handleDeposit(e) {
                 }
             });
     }
+
+
+// إضافة هذه الدالة للتعامل مع إعادة الاتصال بـ Firebase
+function setupReconnectionHandler() {
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectInterval = 5000; // 5 ثوانٍ
+    
+    let reconnectTimer = null;
+    
+    const attemptReconnect = () => {
+        if (!navigator.onLine) {
+            console.log("لا يمكن إعادة الاتصال: الجهاز غير متصل بالإنترنت");
+            return;
+        }
+        
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            console.log("تم تجاوز الحد الأقصى لمحاولات إعادة الاتصال");
+            clearInterval(reconnectTimer);
+            alert(document.documentElement.lang === "ar" ? 
+                  "تعذر الاتصال بالخادم. يرجى تحديث الصفحة والمحاولة مرة أخرى." : 
+                  "Unable to connect to server. Please refresh the page and try again.");
+            return;
+        }
+        
+        reconnectAttempts++;
+        console.log(`محاولة إعادة الاتصال ${reconnectAttempts}/${maxReconnectAttempts}...`);
+        
+        firebase.firestore().enableNetwork()
+            .then(() => {
+                console.log("تم إعادة الاتصال بـ Firestore بنجاح");
+                clearInterval(reconnectTimer);
+                reconnectAttempts = 0;
+                
+                // إعادة تحميل بيانات المستخدم
+                const userUid = sessionStorage.getItem("currentUserUid");
+                if (userUid) {
+                    reloadUserData(userUid);
+                }
+                
+                // مزامنة العمليات المعلقة
+                syncPendingOperations();
+            })
+            .catch((error) => {
+                console.error("فشلت محاولة إعادة الاتصال:", error);
+            });
+    };
+    
+    // مراقبة حالة الاتصال
+    firebase.firestore().onSnapshotsInSync(() => {
+        console.log("Firestore متزامن");
+    });
+    
+    window.addEventListener('online', () => {
+        console.log("تمت استعادة الاتصال بالإنترنت");
+        attemptReconnect();
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log("تم فقدان الاتصال بالإنترنت");
+        if (reconnectTimer) {
+            clearInterval(reconnectTimer);
+        }
+    });
+    
+    // مراقبة أخطاء الاتصال بـ Firebase
+    db.collection("users").onSnapshot({
+        error: (error) => {
+            console.error("خطأ في مراقبة المستخدمين:", error);
+            
+            if (error.code === 'unavailable' || error.code === 'resource-exhausted') {
+                console.log("بدء محاولات إعادة الاتصال...");
+                if (!reconnectTimer) {
+                    reconnectTimer = setInterval(attemptReconnect, reconnectInterval);
+                }
+            }
+        }
+    });
+}
+
+// استدعاء الدالة بعد تهيئة Firebase
+setupReconnectionHandler();
 
     function addTransaction(userUid, type, amount, otherParty, note) {
         return db.collection("transactions").add({
