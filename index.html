@@ -595,61 +595,59 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         });
     });
 
-    // Check authentication state on load
-    // تحسين التعامل مع حالة المصادقة
     auth.onAuthStateChanged(user => {
-        console.log("تغيرت حالة المصادقة. المستخدم:", user);
-        if (user) {
-            // المستخدم مسجل الدخول
-            console.log("محاولة تحميل بيانات المستخدم من Firestore");
-            db.collection("users").doc(user.uid).get()
-                .then(doc => {
-                    console.log("تم جلب وثيقة المستخدم:", doc.exists ? "موجودة" : "غير موجودة");
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        console.log("بيانات المستخدم:", userData);
+    console.log("تغيرت حالة المصادقة. المستخدم:", user);
+    if (user) {
+        // المستخدم مسجل الدخول
+        console.log("محاولة تحميل بيانات المستخدم من Firestore");
+        db.collection("users").doc(user.uid).get()
+            .then(doc => {
+                console.log("تم جلب وثيقة المستخدم:", doc.exists ? "موجودة" : "غير موجودة");
+                if (doc.exists) {
+                    const userData = doc.data();
+                    console.log("بيانات المستخدم:", userData);
+                    loadUserData({
+                        name: userData.name,
+                        email: user.email,
+                        balance: userData.balance,
+                        cardNumber: userData.cardNumber,
+                        uid: user.uid
+                    });
+                } else {
+                    console.log("لم يتم العثور على وثيقة المستخدم - إنشاء بيانات جديدة");
+                    // إنشاء وثيقة المستخدم إذا لم تكن موجودة
+                    const cardNumber = generateCardNumber();
+                    return db.collection("users").doc(user.uid).set({
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        balance: 0,
+                        cardNumber: cardNumber,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        console.log("تم إنشاء وثيقة المستخدم الجديدة");
+                        createDefaultWallets(user.uid);
                         loadUserData({
-                            name: userData.name,
-                            email: user.email,
-                            balance: userData.balance,
-                            cardNumber: userData.cardNumber,
-                            uid: user.uid
-                        });
-                    } else {
-                        console.error("لم يتم العثور على وثيقة المستخدم");
-                        // إنشاء وثيقة المستخدم إذا لم تكن موجودة
-                        const cardNumber = generateCardNumber();
-                        return db.collection("users").doc(user.uid).set({
-                            name: user.displayName || "مستخدم جديد",
+                            name: user.displayName || user.email.split('@')[0],
                             email: user.email,
                             balance: 0,
                             cardNumber: cardNumber,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => {
-                            createDefaultWallets(user.uid);
-                            loadUserData({
-                                name: user.displayName || "مستخدم جديد",
-                                email: user.email,
-                                balance: 0,
-                                cardNumber: cardNumber,
-                                uid: user.uid
-                            });
+                            uid: user.uid
                         });
-                    }
-                })
-                .catch(error => {
-                    console.error("خطأ في جلب بيانات المستخدم:", error);
-                    alert("حدث خطأ أثناء تحميل بيانات المستخدم");
-                });
-        } else {
-            // المستخدم غير مسجل الدخول
-            console.log("المستخدم غير مسجل الدخول، عرض نموذج تسجيل الدخول");
-            if (dashboard) dashboard.style.display = "none";
-            if (loginForm) loginForm.style.display = "block";
-            if (registerForm) registerForm.style.display = "none";
-        }
-    });
-    
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("خطأ في جلب بيانات المستخدم:", error);
+                alert("حدث خطأ أثناء تحميل بيانات المستخدم");
+            });
+    } else {
+        // المستخدم غير مسجل الدخول
+        console.log("المستخدم غير مسجل الدخول، عرض نموذج تسجيل الدخول");
+        if (dashboard) dashboard.style.display = "none";
+        if (loginForm) loginForm.style.display = "block";
+        if (registerForm) registerForm.style.display = "none";
+    }
+});    
     // Functions
     function toggleForms(e) {
         e.preventDefault();
@@ -658,75 +656,99 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     }
 
     function handleRegister(e) {
-        e.preventDefault();
-        
-        const name = document.getElementById("registerName").value;
-        const email = document.getElementById("registerEmail").value;
-        const password = document.getElementById("registerPassword").value;
-        const confirmPassword = document.getElementById("confirmPassword").value;
-        
-        if (password !== confirmPassword) {
-            alert(document.documentElement.lang === "ar" ? "كلمة المرور غير متطابقة" : "Passwords do not match");
-            return;
-        }
-        
-        // Create user with Firebase Auth
-        auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                console.log("User registered successfully:", userCredential.user);
-
-                // Create user document in Firestore
-                const user = userCredential.user;
-                const cardNumber = generateCardNumber();
-                
-                db.collection("users").doc(user.uid).set({
-                    name: name,
-                    email: email,
-                    balance: 0,
-                    cardNumber: cardNumber,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                })
-                .then(() => {
-                    // Create default wallets for the user
-                    createDefaultWallets(user.uid);
-                    
-                    alert(document.documentElement.lang === "ar" ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
-                    loginForm.style.display = "block";
-                    registerForm.style.display = "none";
-                })
-                .catch((error) => {
-                    console.error("Error creating user document: ", error);
-                    alert(error.message);
-                });
-            })
-            .catch((error) => {
-                console.error("Error creating user: ", error);
-                alert(error.message);
-            });
+    e.preventDefault();
+    
+    const name = document.getElementById("registerName").value;
+    const email = document.getElementById("registerEmail").value;
+    const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    
+    if (password !== confirmPassword) {
+        alert(document.documentElement.lang === "ar" ? "كلمة المرور غير متطابقة" : "Passwords do not match");
+        return;
     }
+    
+    // إظهار رسالة تحميل
+    let loadingMessage = document.createElement('div');
+    loadingMessage.textContent = document.documentElement.lang === "ar" ? "جاري إنشاء الحساب..." : "Creating account...";
+    loadingMessage.style.textAlign = "center";
+    loadingMessage.style.padding = "10px";
+    registerForm.appendChild(loadingMessage);
+    
+    // Create user with Firebase Auth
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            console.log("User registered successfully:", userCredential.user);
 
-    function handleLogin(e) {
-        e.preventDefault();
-        console.log("محاولة تسجيل الدخول...");
-        
-        const email = document.getElementById("loginEmail").value;
-        const password = document.getElementById("loginPassword").value;
-        
-        console.log("محاولة تسجيل الدخول بالبريد الإلكتروني:", email);
-        
-        // تسجيل الدخول باستخدام Firebase Auth
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                // تسجيل دخول ناجح
-                console.log("تم تسجيل الدخول بنجاح:", userCredential.user);
-                document.getElementById("loginEmail").value = "";
-                document.getElementById("loginPassword").value = "";
+            // Create user document in Firestore
+            const user = userCredential.user;
+            const cardNumber = generateCardNumber();
+            
+            return db.collection("users").doc(user.uid).set({
+                name: name,
+                email: email,
+                balance: 0,
+                cardNumber: cardNumber,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             })
-            .catch((error) => {
-                console.error("خطأ في تسجيل الدخول:", error);
-                alert(document.documentElement.lang === "ar" ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password");
+            .then(() => {
+                // Create default wallets for the user
+                return createDefaultWallets(user.uid);
+            })
+            .then(() => {
+                registerForm.removeChild(loadingMessage);
+                alert(document.documentElement.lang === "ar" ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+                // إعادة تعيين النموذج
+                document.getElementById("registerName").value = "";
+                document.getElementById("registerEmail").value = "";
+                document.getElementById("registerPassword").value = "";
+                document.getElementById("confirmPassword").value = "";
+                // عرض نموذج تسجيل الدخول
+                loginForm.style.display = "block";
+                registerForm.style.display = "none";
             });
-    }
+        })
+        .catch((error) => {
+            registerForm.removeChild(loadingMessage);
+            console.error("Error creating user: ", error);
+            alert(error.message);
+        });
+}
+function handleLogin(e) {
+    e.preventDefault();
+    console.log("محاولة تسجيل الدخول...");
+    
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    
+    console.log("محاولة تسجيل الدخول بالبريد الإلكتروني:", email);
+    
+    // إضافة رسالة تحميل
+    let loadingMessage = document.createElement('div');
+    loadingMessage.textContent = document.documentElement.lang === "ar" ? "جاري تسجيل الدخول..." : "Logging in...";
+    loadingMessage.style.textAlign = "center";
+    loadingMessage.style.padding = "10px";
+    loginForm.appendChild(loadingMessage);
+    
+    // تسجيل الدخول باستخدام Firebase Auth
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // تسجيل دخول ناجح
+            console.log("تم تسجيل الدخول بنجاح:", userCredential.user);
+            document.getElementById("loginEmail").value = "";
+            document.getElementById("loginPassword").value = "";
+            // إزالة رسالة التحميل
+            loginForm.removeChild(loadingMessage);
+            
+            // لن نحتاج إلى تغيير العرض هنا لأن onAuthStateChanged سيقوم بذلك
+        })
+        .catch((error) => {
+            // إزالة رسالة التحميل
+            loginForm.removeChild(loadingMessage);
+            console.error("خطأ في تسجيل الدخول:", error);
+            alert(document.documentElement.lang === "ar" ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password");
+        });
+}
 
     function handleLogout() {
         auth.signOut()
@@ -740,29 +762,34 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     }
 
     function loadUserData(user) {
-        console.log("جاري تحميل بيانات المستخدم في واجهة المستخدم:", user);
-        
-        if (userNameDisplay) userNameDisplay.textContent = user.name;
-        if (balanceAmount) balanceAmount.textContent = user.balance.toLocaleString();
-        if (cardHolderName) cardHolderName.textContent = user.name;
-        if (lastFourDigits) lastFourDigits.textContent = user.cardNumber.slice(-4);
-        
-        // تخزين بيانات المستخدم للوصول السريع
-        sessionStorage.setItem("currentUserUid", user.uid);
-        
-        loadRecentTransactions(user.uid);
-        loadWalletBalances(user.uid);
-        
-        if (loginForm) loginForm.style.display = "none";
-        if (registerForm) registerForm.style.display = "none";
-        if (dashboard) {
-            dashboard.style.display = "block";
-            console.log("تم عرض لوحة التحكم");
-        } else {
-            console.error("عنصر لوحة التحكم غير موجود!");
-        }
+    console.log("جاري تحميل بيانات المستخدم في واجهة المستخدم:", user);
+    
+    if (userNameDisplay) userNameDisplay.textContent = user.name;
+    if (balanceAmount) balanceAmount.textContent = user.balance.toLocaleString();
+    if (cardHolderName) cardHolderName.textContent = user.name;
+    if (lastFourDigits) lastFourDigits.textContent = user.cardNumber.slice(-4);
+    
+    // تخزين بيانات المستخدم للوصول السريع
+    sessionStorage.setItem("currentUserUid", user.uid);
+    localStorage.setItem("userEmail", user.email); // إضافة تخزين البريد الإلكتروني محلياً
+    
+    loadRecentTransactions(user.uid);
+    loadWalletBalances(user.uid);
+    
+    if (loginForm) loginForm.style.display = "none";
+    if (registerForm) registerForm.style.display = "none";
+    if (dashboard) {
+        dashboard.style.display = "block";
+        console.log("تم عرض لوحة التحكم");
+    } else {
+        console.error("عنصر لوحة التحكم غير موجود!");
     }
-    function handleDeposit(e) {
+
+    // إضافة سجل تصحيح إضافي للتحقق من نجاح عملية تسجيل الدخول
+    console.log("تم تحميل بيانات المستخدم بنجاح وتم عرض لوحة التحكم");
+}
+
+function handleDeposit(e) {
         e.preventDefault();
         
         const amount = parseFloat(document.getElementById("depositAmount").value);
@@ -1054,25 +1081,33 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     }
 
     function createDefaultWallets(userUid) {
-        // Create Bitcoin wallet
-        db.collection("wallets").add({
-            userUid,
-            type: "BTC",
-            balance: 0,
-            address: generateWalletAddress("BTC"),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Create Ethereum wallet
-        db.collection("wallets").add({
-            userUid,
-            type: "ETH",
-            balance: 0,
-            address: generateWalletAddress("ETH"),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
+    const batch = db.batch();
+    
+    // Bitcoin wallet ref
+    const btcWalletRef = db.collection("wallets").doc(`${userUid}_BTC`);
+    batch.set(btcWalletRef, {
+        userUid,
+        type: "BTC",
+        balance: 0,
+        address: generateWalletAddress("BTC"),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Ethereum wallet ref
+    const ethWalletRef = db.collection("wallets").doc(`${userUid}_ETH`);
+    batch.set(ethWalletRef, {
+        userUid,
+        type: "ETH",
+        balance: 0,
+        address: generateWalletAddress("ETH"),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Return the batch commit promise
+    return batch.commit().then(() => {
+        console.log("تم إنشاء المحافظ الافتراضية");
+    });
+}
     function loadWalletBalances(userUid) {
         db.collection("wallets")
             .where("userUid", "==", userUid)
