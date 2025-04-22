@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BANK GAME</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.21.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.21.0/firebase-firestore-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.21.0/firebase-auth-compat.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #000;
+            --secondary-color: #fff;
+            --accent-color: #333;
+            --text-color: #000;
+            --background-color: #fff;
+            --border-color: #ddd;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+
+        .ltr {
+            direction: ltr;
+            text-align: left;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: var(--secondary-color);
+        }
+
+        .language-toggle {
+            background: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .login-container, .register-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .balance {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .currency {
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        .card {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-number {
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            margin: 1rem 0;
+        }
+
+        .card-holder {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .card-expiry {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            font-size: 0.8rem;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .action-item {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .transactions {
+            margin-top: 2rem;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            border: none;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+        }
+
+        .wallet-container {
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .wallet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            padding: 0.5rem;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            word-break: break-all;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--background-color);
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .tab-container {
+            margin-top: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: bold;
+        }
+
+        .tab-content {
+            padding: 1.5rem 0;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="rtl">
+    <header>
+        <a href="#" class="logo">BANK GAME</a>
+        <button class="language-toggle" onclick="toggleLanguage()">English</button>
+    </header>
+
+    <div class="container">
+        <!-- Login Form -->
+        <div class="login-container" id="loginForm">
+            <h2 data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</h2>
+            <form id="login">
+                <div class="form-group">
+                    <label for="loginEmail" data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword" data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" data-ar="دخول" data-en="Login">دخول</button>
+            </form>
+            <p style="margin-top: 1rem; text-align: center;">
+                <a href="#" id="showRegister" data-ar="لا تملك حساب؟ سجل الآن" data-en="Don't have an account? Register now">لا تملك حساب؟ سجل الآن</a>
+            </p>
+        </div>
+
+        <!-- Register Form -->
+        <div class="register-container" id="registerForm" style="display: none;">
+            <h2 data-ar="إنشاء حساب جديد" data-en="Create New Account">إنشاء حساب جديد</h2>
+            <form id="register">
+                <div class="form-group">
+                    <label for="registerName" data-ar="الاسم الكامل" data-en="Full Name">الاسم الكامل</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail" data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword" data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword" data-ar="تأكيد كلمة المرور" data-en="Confirm Password">تأكيد كلمة المرور</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <button type="submit" data-ar="تسجيل" data-en="Register">تسجيل</button>
+            </form>
+            <p style="margin-top: 1rem; text-align: center;">
+                <a href="#" id="showLogin" data-ar="لديك حساب بالفعل؟ تسجيل الدخول" data-en="Already have an account? Login">لديك حساب بالفعل؟ تسجيل الدخول</a>
+            </p>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard" id="dashboard">
+            <div class="dashboard-header">
+                <div>
+                    <h2 data-ar="مرحباً، " data-en="Welcome, "><span id="userNameDisplay">مستخدم</span></h2>
+                </div>
+                <button id="logoutBtn" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
+            </div>
+
+            <div class="card">
+                <h3 data-ar="بطاقة الائتمان" data-en="Credit Card">بطاقة الائتمان</h3>
+                <div class="card-number">**** **** **** <span id="lastFourDigits">1234</span></div>
+                <div class="card-holder" id="cardHolderName">اسم صاحب البطاقة</div>
+                <div class="card-expiry">12/28</div>
+            </div>
+
+            <div class="balance-section">
+                <h3 data-ar="الرصيد الحالي" data-en="Current Balance">الرصيد الحالي</h3>
+                <div class="balance"><span id="balanceAmount">0</span> <span class="currency" data-ar="ريال" data-en="SAR">ريال</span></div>
+            </div>
+
+            <div class="actions">
+                <div class="action-item" id="depositBtn">
+                    <div class="action-icon">💰</div>
+                    <h3 data-ar="إيداع" data-en="Deposit">إيداع</h3>
+                </div>
+                <div class="action-item" id="transferBtn">
+                    <div class="action-icon">↗️</div>
+                    <h3 data-ar="تحويل" data-en="Transfer">تحويل</h3>
+                </div>
+                <div class="action-item" id="walletsBtn">
+                    <div class="action-icon">💼</div>
+                    <h3 data-ar="المحافظ الرقمية" data-en="Digital Wallets">المحافظ الرقمية</h3>
+                </div>
+                <div class="action-item" id="historyBtn">
+                    <div class="action-icon">📜</div>
+                    <h3 data-ar="سجل العمليات" data-en="Transaction History">سجل العمليات</h3>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="recent-transactions" data-ar="أحدث العمليات" data-en="Recent Transactions">أحدث العمليات</div>
+                    <div class="tab" data-tab="wallets" data-ar="المحافظ" data-en="Wallets">المحافظ</div>
+                </div>
+
+                <div class="tab-content">
+                    <div class="tab-pane active" id="recent-transactions">
+                        <div class="transactions" id="transactionsList">
+                            <div class="transaction-item">
+                                <div>
+                                    <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="wallets">
+                        <div class="wallet-container">
+                            <div class="wallet-header">
+                                <h3>Bitcoin (BTC)</h3>
+                                <div><span id="btcBalance">0</span> BTC</div>
+                            </div>
+                            <div>
+                                <p data-ar="عنوان المحفظة:" data-en="Wallet Address:">عنوان المحفظة:</p>
+                                <div class="wallet-address" id="btcAddress">bc1q87de3fagf7agfg78afg78ga78fg7a8g7</div>
+                            </div>
+                        </div>
+                        
+                        <div class="wallet-container">
+                            <div class="wallet-header">
+                                <h3>Ethereum (ETH)</h3>
+                                <div><span id="ethBalance">0</span> ETH</div>
+                            </div>
+                            <div>
+                                <p data-ar="عنوان المحفظة:" data-en="Wallet Address:">عنوان المحفظة:</p>
+                                <div class="wallet-address" id="ethAddress">0x87de3f7agf7agfg78afg78ga78fg7a8g7</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div class="modal" id="depositModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeDepositModal">&times;</span>
+            <h2 data-ar="إيداع أموال" data-en="Deposit Money">إيداع أموال</h2>
+            <form id="depositForm">
+                <div class="form-group">
+                    <label for="depositAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                    <input type="number" id="depositAmount" min="1" required>
+                </div>
+                <button type="submit" data-ar="إيداع" data-en="Deposit">إيداع</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div class="modal" id="transferModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeTransferModal">&times;</span>
+            <h2 data-ar="تحويل أموال" data-en="Transfer Money">تحويل أموال</h2>
+            <form id="transferForm">
+                <div class="form-group">
+                    <label for="recipientEmail" data-ar="بريد المستلم" data-en="Recipient Email">بريد المستلم</label>
+                    <input type="email" id="recipientEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="transferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                    <input type="number" id="transferAmount" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="transferNote" data-ar="ملاحظة" data-en="Note">ملاحظة</label>
+                    <input type="text" id="transferNote">
+                </div>
+                <button type="submit" data-ar="تحويل" data-en="Transfer">تحويل</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeHistoryModal">&times;</span>
+            <h2 data-ar="سجل العمليات" data-en="Transaction History">سجل العمليات</h2>
+            <div id="fullTransactionsList">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDgLo1laAK8i4gsZ7FYkVCUJRi1uYNZnXo",
+    authDomain: "bankmqr.firebaseapp.com",
+    projectId: "bankmqr",
+    storageBucket: "bankmqr.firebasestorage.app",
+    messagingSenderId: "325807574746",
+    appId: "1:325807574746:web:6e77eb996fed4ef6941fe3",
+    measurementId: "G-K6DRK157FM"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
+
+        // DOM Elements
+// DOM Elements
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const dashboard = document.getElementById("dashboard");
+const showRegisterLink = document.getElementById("showRegister");
+const showLoginLink = document.getElementById("showLogin");
+const logoutBtn = document.getElementById("logoutBtn");
+const userNameDisplay = document.getElementById("userNameDisplay");
+const balanceAmount = document.getElementById("balanceAmount");
+const cardHolderName = document.getElementById("cardHolderName");
+const lastFourDigits = document.getElementById("lastFourDigits");
+const depositBtn = document.getElementById("depositBtn");
+const transferBtn = document.getElementById("transferBtn");
+const walletsBtn = document.getElementById("walletsBtn");
+const historyBtn = document.getElementById("historyBtn");
+const depositModal = document.getElementById("depositModal");
+const transferModal = document.getElementById("transferModal");
+const historyModal = document.getElementById("historyModal");
+const closeDepositModal = document.getElementById("closeDepositModal");
+const closeTransferModal = document.getElementById("closeTransferModal");
+const closeHistoryModal = document.getElementById("closeHistoryModal");
+const depositForm = document.getElementById("depositForm");
+const transferForm = document.getElementById("transferForm");
+const transactionsList = document.getElementById("transactionsList");
+const fullTransactionsList = document.getElementById("fullTransactionsList");
+const tabs = document.querySelectorAll(".tab");
+const tabPanes = document.querySelectorAll(".tab-pane");
+const btcBalance = document.getElementById("btcBalance");
+const ethBalance = document.getElementById("ethBalance");
+const btcAddress = document.getElementById("btcAddress");
+const ethAddress = document.getElementById("ethAddress");
+
+        // Event Listeners
+        document.getElementById("login").addEventListener("submit", handleLogin);
+        document.getElementById("register").addEventListener("submit", handleRegister);
+        showRegisterLink.addEventListener("click", toggleForms);
+        showLoginLink.addEventListener("click", toggleForms);
+        logoutBtn.addEventListener("click", handleLogout);
+        depositBtn.addEventListener("click", () => depositModal.style.display = "flex");
+        transferBtn.addEventListener("click", () => transferModal.style.display = "flex");
+        historyBtn.addEventListener("click", () => {
+            loadFullTransactionHistory();
+            historyModal.style.display = "flex";
+        });
+        closeDepositModal.addEventListener("click", () => depositModal.style.display = "none");
+        closeTransferModal.addEventListener("click", () => transferModal.style.display = "none");
+        closeHistoryModal.addEventListener("click", () => historyModal.style.display = "none");
+        depositForm.addEventListener("submit", handleDeposit);
+        transferForm.addEventListener("submit", handleTransfer);
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                const tabId = tab.getAttribute("data-tab");
+                
+                // Remove active class from all tabs and panes
+                tabs.forEach(t => t.classList.remove("active"));
+                tabPanes.forEach(p => p.classList.remove("active"));
+                
+                // Add active class to current tab and pane
+                tab.classList.add("active");
+                document.getElementById(tabId).classList.add("active");
+            });
+        });
+
+        // Functions
+        function toggleForms(e) {
+            e.preventDefault();
+            loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
+            registerForm.style.display = registerForm.style.display === "none" ? "block" : "none";
+        }
+
+        function handleRegister(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById("registerName").value;
+    const email = document.getElementById("registerEmail").value;
+    const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    
+    if (password !== confirmPassword) {
+        alert(document.documentElement.lang === "ar" ? "كلمة المرور غير متطابقة" : "Passwords do not match");
+        return;
+    }
+    
+    // إنشاء مستخدم في Firebase Authentication
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // تم إنشاء المستخدم بنجاح
+            const user = {
+                name: name,
+                email: email,
+                balance: 0,
+                cardNumber: generateCardNumber(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // إضافة بيانات المستخدم إلى Firestore
+            return db.collection("users").doc(email).set(user)
+                .then(() => {
+                    // إنشاء المحافظ الافتراضية للمستخدم
+                    createDefaultWallets(email);
+                    
+                    alert(document.documentElement.lang === "ar" ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+                    loginForm.style.display = "block";
+                    registerForm.style.display = "none";
+                });
+        })
+        .catch((error) => {
+            if (error.code === "auth/email-already-in-use") {
+                alert(document.documentElement.lang === "ar" ? "البريد الإلكتروني مسجل مسبقاً" : "Email already registered");
+            } else {
+                alert(error.message);
+            }
+        });
+}
+function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // جلب بيانات المستخدم من Firestore
+            db.collection("users").doc(email).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // تخزين بيانات المستخدم في localStorage
+                        localStorage.setItem("currentUser", JSON.stringify({
+                            name: userData.name,
+                            email: userData.email,
+                            balance: userData.balance,
+                            cardNumber: userData.cardNumber
+                        }));
+                        
+                        loadUserData({
+                            name: userData.name,
+                            email: userData.email,
+                            balance: userData.balance,
+                            cardNumber: userData.cardNumber
+                        });
+                    }
+                });
+        })
+        .catch((error) => {
+            alert(document.documentElement.lang === "ar" ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password");
+        });
+}
+function handleLogout() {
+    auth.signOut().then(() => {
+        localStorage.removeItem("currentUser");
+        dashboard.style.display = "none";
+        loginForm.style.display = "block";
+        document.getElementById("loginEmail").value = "";
+        document.getElementById("loginPassword").value = "";
+    });
+}
+        function loadUserData(user) {
+            userNameDisplay.textContent = user.name;
+            balanceAmount.textContent = user.balance.toLocaleString();
+            cardHolderName.textContent = user.name;
+            lastFourDigits.textContent = user.cardNumber.slice(-4);
+            
+            loadRecentTransactions(user.email);
+            loadWalletBalances(user.email);
+            
+            loginForm.style.display = "none";
+            registerForm.style.display = "none";
+            dashboard.style.display = "block";
+        }
+
+        function handleDeposit(e) {
+    e.preventDefault();
+    
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+    if (isNaN(amount) || amount <= 0) {
+        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
+        return;
+    }
+    
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    
+    // تحديث رصيد المستخدم في Firestore
+    db.collection("users").doc(currentUser.email).get()
+        .then((doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                const newBalance = userData.balance + amount;
+                
+                db.collection("users").doc(currentUser.email).update({
+                    balance: newBalance
+                })
+                .then(() => {
+                    // تحديث localStorage
+                    currentUser.balance = newBalance;
+                    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+                    
+                    // إضافة سجل المعاملة
+                    addTransaction(currentUser.email, "deposit", amount, null, null);
+                    
+                    // تحديث واجهة المستخدم
+                    balanceAmount.textContent = currentUser.balance.toLocaleString();
+                    
+                    // إغلاق النموذج وإعادة تعيينه
+                    depositModal.style.display = "none";
+                    document.getElementById("depositAmount").value = "";
+                    
+                    alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
+                    
+                    // إعادة تحميل المعاملات
+                    loadRecentTransactions(currentUser.email);
+                });
+            }
+        });
+}
+function handleTransfer(e) {
+    e.preventDefault();
+    
+    const recipientEmail = document.getElementById("recipientEmail").value;
+    const amount = parseFloat(document.getElementById("transferAmount").value);
+    const note = document.getElementById("transferNote").value;
+    
+    if (isNaN(amount) || amount <= 0) {
+        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
+        return;
+    }
+    
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    
+    // التحقق من رصيد المستخدم
+    db.collection("users").doc(currentUser.email).get()
+        .then((senderDoc) => {
+            if (senderDoc.exists) {
+                const senderData = senderDoc.data();
+                
+                if (senderData.balance < amount) {
+                    alert(document.documentElement.lang === "ar" ? "رصيد غير كافٍ" : "Insufficient balance");
+                    return;
+                }
+                
+                // التحقق من وجود المستلم
+                db.collection("users").doc(recipientEmail).get()
+                    .then((recipientDoc) => {
+                        if (!recipientDoc.exists) {
+                            alert(document.documentElement.lang === "ar" ? "المستلم غير موجود" : "Recipient not found");
+                            return;
+                        }
+                        
+                        const recipientData = recipientDoc.data();
+                        
+                        // تحديث رصيد المرسل
+                        const newSenderBalance = senderData.balance - amount;
+                        db.collection("users").doc(currentUser.email).update({
+                            balance: newSenderBalance
+                        });
+                        
+                        // تحديث رصيد المستلم
+                        const newRecipientBalance = recipientData.balance + amount;
+                        db.collection("users").doc(recipientEmail).update({
+                            balance: newRecipientBalance
+                        });
+                        
+                        // تحديث localStorage
+                        currentUser.balance = newSenderBalance;
+                        localStorage.setItem("currentUser", JSON.stringify(currentUser));
+                        
+                        // إضافة سجلات المعاملات
+                        addTransaction(currentUser.email, "sent", amount, recipientEmail, note);
+                        addTransaction(recipientEmail, "received", amount, currentUser.email, note);
+                        
+                        // تحديث واجهة المستخدم
+                        balanceAmount.textContent = currentUser.balance.toLocaleString();
+                        
+                        // إغلاق النموذج وإعادة تعيينه
+                        transferModal.style.display = "none";
+                        document.getElementById("recipientEmail").value = "";
+                        document.getElementById("transferAmount").value = "";
+                        document.getElementById("transferNote").value = "";
+                        
+                        alert(document.documentElement.lang === "ar" ? "تم التحويل بنجاح" : "Transfer successful");
+                        
+                        // إعادة تحميل المعاملات
+                        loadRecentTransactions(currentUser.email);
+                    });
+            }
+        });
+}
+function addTransaction(userEmail, type, amount, otherParty, note) {
+    db.collection("transactions").add({
+        userEmail: userEmail,
+        type: type,
+        amount: amount,
+        otherParty: otherParty,
+        note: note,
+        date: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+function loadRecentTransactions(userEmail) {
+    db.collection("transactions")
+        .where("userEmail", "==", userEmail)
+        .orderBy("date", "desc")
+        .limit(5)
+        .get()
+        .then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                transactionsList.innerHTML = `
+                    <div class="transaction-item">
+                        <div>
+                            <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            transactionsList.innerHTML = "";
+            
+            querySnapshot.forEach((doc) => {
+                const tx = doc.data();
+                const date = tx.date ? new Date(tx.date.toDate()) : new Date();
+                const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+                
+                const transactionItem = document.createElement("div");
+                transactionItem.className = "transaction-item";
+                
+                let typeText, amountHTML;
+                
+                if (tx.type === "deposit") {
+                    typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
+                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                } else if (tx.type === "sent") {
+                    typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
+                    typeText += ` ${tx.otherParty}`;
+                    amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
+                } else if (tx.type === "received") {
+                    typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
+                    typeText += ` ${tx.otherParty}`;
+                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                }
+                
+                transactionItem.innerHTML = `
+                    <div>
+                        <strong>${typeText}</strong>
+                        <div>${formattedDate}</div>
+                        ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
+                    </div>
+                    <div>
+                        ${amountHTML}
+                    </div>
+                `;
+                
+                transactionsList.appendChild(transactionItem);
+            });
+        });
+}
+function loadFullTransactionHistory() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    
+    db.collection("transactions")
+        .where("userEmail", "==", currentUser.email)
+        .orderBy("date", "desc")
+        .get()
+        .then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                fullTransactionsList.innerHTML = `
+                    <div class="transaction-item">
+                        <div>
+                            <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            fullTransactionsList.innerHTML = "";
+            
+            querySnapshot.forEach((doc) => {
+                const tx = doc.data();
+                const date = tx.date ? new Date(tx.date.toDate()) : new Date();
+                const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                const transactionItem = document.createElement("div");
+                transactionItem.className = "transaction-item";
+                
+                let typeText, amountHTML;
+                
+                if (tx.type === "deposit") {
+                    typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
+                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                } else if (tx.type === "sent") {
+                    typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
+                    typeText += ` ${tx.otherParty}`;
+                    amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
+                } else if (tx.type === "received") {
+                    typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
+                    typeText += ` ${tx.otherParty}`;
+                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                }
+                
+                transactionItem.innerHTML = `
+                    <div>
+                        <strong>${typeText}</strong>
+                        <div>${formattedDate}</div>
+                        ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
+                    </div>
+                    <div>
+                        ${amountHTML}
+                    </div>
+                `;
+                
+                fullTransactionsList.appendChild(transactionItem);
+            });
+        });
+}
+function createDefaultWallets(userEmail) {
+    // إنشاء محفظة بيتكوين
+    db.collection("wallets").add({
+        userEmail: userEmail,
+        type: "BTC",
+        balance: 0,
+        address: generateWalletAddress("BTC"),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // إنشاء محفظة إيثريوم
+    db.collection("wallets").add({
+        userEmail: userEmail,
+        type: "ETH",
+        balance: 0,
+        address: generateWalletAddress("ETH"),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+function loadWalletBalances(userEmail) {
+    db.collection("wallets")
+        .where("userEmail", "==", userEmail)
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                const wallet = doc.data();
+                
+                if (wallet.type === "BTC") {
+                    btcBalance.textContent = wallet.balance;
+                    btcAddress.textContent = wallet.address;
+                } else if (wallet.type === "ETH") {
+                    ethBalance.textContent = wallet.balance;
+                    ethAddress.textContent = wallet.address;
+                }
+            });
+        });
+}
+        function generateCardNumber() {
+            let cardNumber = "4";
+            for (let i = 0; i < 15; i++) {
+                cardNumber += Math.floor(Math.random() * 10);
+            }
+            return cardNumber;
+        }
+
+        function generateWalletAddress(type) {
+            if (type === "BTC") {
+                const prefix = "bc1";
+                let address = prefix;
+                const chars = "qwertyuiopasdfghjklzxcvbnm1234567890";
+                for (let i = 0; i < 35; i++) {
+                    address += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return address;
+            } else if (type === "ETH") {
+                const prefix = "0x";
+                let address = prefix;
+                const chars = "abcdef1234567890";
+                for (let i = 0; i < 40; i++) {
+                    address += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return address;
+            }
+            return "";
+        }
+
+        // Language toggle
+        function toggleLanguage() {
+            const currentLang = document.body.classList.contains("rtl") ? "ar" : "en";
+            const newLang = currentLang === "ar" ? "en" : "ar";
+            
+            if (newLang === "en") {
+                document.body.classList.remove("rtl");
+                document.body.classList.add("ltr");
+                document.documentElement.lang = "en";
+                document.querySelector(".language-toggle").textContent = "العربية";
+            } else {
+                document.body.classList.remove("ltr");
+                document.body.classList.add("rtl");
+                document.documentElement.lang = "ar";
+                document.querySelector(".language-toggle").textContent = "English";
+            }
+            
+            // Update all elements with data-ar and data-en attributes
+            const elements = document.querySelectorAll("[data-ar][data-en]");
+            elements.forEach(el => {
+                el.textContent = el.getAttribute(`data-${newLang}`);
+            });
+        }
+
+        // Window click event to close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target === depositModal) {
+                depositModal.style.display = "none";
+            }
+            if (event.target === transferModal) {
+                transferModal.style.display = "none";
+            }
+            if (event.target === historyModal) {
+                historyModal.style.display = "none";
+            }
+        };
+    </script>
+</body>
+</html>
