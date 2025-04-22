@@ -1542,6 +1542,24 @@ setupReconnectionHandler();
         return "";
     }
 
+    function checkFirebaseConnection() {
+    return new Promise((resolve, reject) => {
+        // إنشاء مستند اختبار للتحقق من الاتصال
+        const testRef = db.collection("_connection_test").doc("test");
+        testRef.set({
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            console.log("تم التحقق من الاتصال بـ Firebase بنجاح");
+            resolve(true);
+        })
+        .catch((error) => {
+            console.error("فشل الاتصال بـ Firebase:", error);
+            reject(error);
+        });
+    });
+}
+
     // Language toggle
     window.toggleLanguage = function() {
         const currentLang = document.body.classList.contains("rtl") ? "ar" : "en";
