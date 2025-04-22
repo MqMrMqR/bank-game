@@ -487,619 +487,613 @@
             </div>
         </div>
     </div>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-      
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyAT0VfDrqizMR3y0QGmZc3WAzRGZ1xTcGo",
-          authDomain: "mqrbank-e0c06.firebaseapp.com",
-          projectId: "mqrbank-e0c06",
-          storageBucket: "mqrbank-e0c06.firebasestorage.app",
-          messagingSenderId: "677309991252",
-          appId: "1:677309991252:web:abc8e543219fb24856e0c1"
-        };
-      
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-      </script>
 
     <script>
+// بداية الكود الذي يجب إضافته قبل باقي الكود في نهاية الصفحة
+document.addEventListener("DOMContentLoaded", function() {
+    // تهيئة Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyAT0VfDrqizMR3y0QGmZc3WAzRGZ1xTcGo",
+        authDomain: "mqrbank-e0c06.firebaseapp.com",
+        projectId: "mqrbank-e0c06",
+        storageBucket: "mqrbank-e0c06.firebasestorage.app",
+        messagingSenderId: "677309991252",
+        appId: "1:677309991252:web:abc8e543219fb24856e0c1"
+    };
 
-  // Initialize Firebase
- // const app = initializeApp(firebaseConfig);
-// Initialize Firestore and Authentication
-//const db = firebase.firestore();
-//const auth = firebase.auth();
+    // تهيئة Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    // تهيئة خدمات Firebase
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-// DOM Elements
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const dashboard = document.getElementById("dashboard");
-const showRegisterLink = document.getElementById("showRegister");
-const showLoginLink = document.getElementById("showLogin");
-const logoutBtn = document.getElementById("logoutBtn");
-const userNameDisplay = document.getElementById("userNameDisplay");
-const balanceAmount = document.getElementById("balanceAmount");
-const cardHolderName = document.getElementById("cardHolderName");
-const lastFourDigits = document.getElementById("lastFourDigits");
-const depositBtn = document.getElementById("depositBtn");
-const transferBtn = document.getElementById("transferBtn");
-const walletsBtn = document.getElementById("walletsBtn");
-const historyBtn = document.getElementById("historyBtn");
-const depositModal = document.getElementById("depositModal");
-const transferModal = document.getElementById("transferModal");
-const historyModal = document.getElementById("historyModal");
-const closeDepositModal = document.getElementById("closeDepositModal");
-const closeTransferModal = document.getElementById("closeTransferModal");
-const closeHistoryModal = document.getElementById("closeHistoryModal");
-const depositForm = document.getElementById("depositForm");
-const transferForm = document.getElementById("transferForm");
-const transactionsList = document.getElementById("transactionsList");
-const fullTransactionsList = document.getElementById("fullTransactionsList");
-const tabs = document.querySelectorAll(".tab");
-const tabPanes = document.querySelectorAll(".tab-pane");
-const btcBalance = document.getElementById("btcBalance");
-const ethBalance = document.getElementById("ethBalance");
-const btcAddress = document.getElementById("btcAddress");
-const ethAddress = document.getElementById("ethAddress");
+    // DOM Elements
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const dashboard = document.getElementById("dashboard");
+    const showRegisterLink = document.getElementById("showRegister");
+    const showLoginLink = document.getElementById("showLogin");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userNameDisplay = document.getElementById("userNameDisplay");
+    const balanceAmount = document.getElementById("balanceAmount");
+    const cardHolderName = document.getElementById("cardHolderName");
+    const lastFourDigits = document.getElementById("lastFourDigits");
+    const depositBtn = document.getElementById("depositBtn");
+    const transferBtn = document.getElementById("transferBtn");
+    const walletsBtn = document.getElementById("walletsBtn");
+    const historyBtn = document.getElementById("historyBtn");
+    const depositModal = document.getElementById("depositModal");
+    const transferModal = document.getElementById("transferModal");
+    const historyModal = document.getElementById("historyModal");
+    const closeDepositModal = document.getElementById("closeDepositModal");
+    const closeTransferModal = document.getElementById("closeTransferModal");
+    const closeHistoryModal = document.getElementById("closeHistoryModal");
+    const depositForm = document.getElementById("depositForm");
+    const transferForm = document.getElementById("transferForm");
+    const transactionsList = document.getElementById("transactionsList");
+    const fullTransactionsList = document.getElementById("fullTransactionsList");
+    const tabs = document.querySelectorAll(".tab");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    const btcBalance = document.getElementById("btcBalance");
+    const ethBalance = document.getElementById("ethBalance");
+    const btcAddress = document.getElementById("btcAddress");
+    const ethAddress = document.getElementById("ethAddress");
 
-// Event Listeners
-document.getElementById("login").addEventListener("submit", handleLogin);
-document.getElementById("register").addEventListener("submit", handleRegister);
-showRegisterLink.addEventListener("click", toggleForms);
-showLoginLink.addEventListener("click", toggleForms);
-logoutBtn.addEventListener("click", handleLogout);
-depositBtn.addEventListener("click", () => depositModal.style.display = "flex");
-transferBtn.addEventListener("click", () => transferModal.style.display = "flex");
-historyBtn.addEventListener("click", () => {
-    loadFullTransactionHistory();
-    historyModal.style.display = "flex";
-});
-closeDepositModal.addEventListener("click", () => depositModal.style.display = "none");
-closeTransferModal.addEventListener("click", () => transferModal.style.display = "none");
-closeHistoryModal.addEventListener("click", () => historyModal.style.display = "none");
-depositForm.addEventListener("submit", handleDeposit);
-transferForm.addEventListener("submit", handleTransfer);
-
-tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-        const tabId = tab.getAttribute("data-tab");
-        
-        // Remove active class from all tabs and panes
-        tabs.forEach(t => t.classList.remove("active"));
-        tabPanes.forEach(p => p.classList.remove("active"));
-        
-        // Add active class to current tab and pane
-        tab.classList.add("active");
-        document.getElementById(tabId).classList.add("active");
+    // Event Listeners
+    document.getElementById("login").addEventListener("submit", handleLogin);
+    document.getElementById("register").addEventListener("submit", handleRegister);
+    showRegisterLink.addEventListener("click", toggleForms);
+    showLoginLink.addEventListener("click", toggleForms);
+    logoutBtn.addEventListener("click", handleLogout);
+    depositBtn.addEventListener("click", () => depositModal.style.display = "flex");
+    transferBtn.addEventListener("click", () => transferModal.style.display = "flex");
+    historyBtn.addEventListener("click", () => {
+        loadFullTransactionHistory();
+        historyModal.style.display = "flex";
     });
-});
+    closeDepositModal.addEventListener("click", () => depositModal.style.display = "none");
+    closeTransferModal.addEventListener("click", () => transferModal.style.display = "none");
+    closeHistoryModal.addEventListener("click", () => historyModal.style.display = "none");
+    depositForm.addEventListener("submit", handleDeposit);
+    transferForm.addEventListener("submit", handleTransfer);
 
-// Check authentication state on load
-auth.onAuthStateChanged(user => {
-    if (user) {
-        // User is signed in
-        db.collection("users").doc(user.uid).get()
-            .then(doc => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    loadUserData({
-                        name: userData.name,
-                        email: user.email,
-                        balance: userData.balance,
-                        cardNumber: userData.cardNumber,
-                        uid: user.uid
-                    });
-                }
-            });
-    } else {
-        // User is signed out
-        dashboard.style.display = "none";
-        loginForm.style.display = "block";
-    }
-});
-
-// Functions
-function toggleForms(e) {
-    e.preventDefault();
-    loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
-    registerForm.style.display = registerForm.style.display === "none" ? "block" : "none";
-}
-
-function handleRegister(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById("registerName").value;
-    const email = document.getElementById("registerEmail").value;
-    const password = document.getElementById("registerPassword").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    
-    if (password !== confirmPassword) {
-        alert(document.documentElement.lang === "ar" ? "كلمة المرور غير متطابقة" : "Passwords do not match");
-        return;
-    }
-    
-    // Create user with Firebase Auth
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // Create user document in Firestore
-            const user = userCredential.user;
-            const cardNumber = generateCardNumber();
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const tabId = tab.getAttribute("data-tab");
             
-            db.collection("users").doc(user.uid).set({
-                name: name,
-                email: email,
-                balance: 0,
-                cardNumber: cardNumber,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                // Create default wallets for the user
-                createDefaultWallets(user.uid);
-                
-                alert(document.documentElement.lang === "ar" ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
-                loginForm.style.display = "block";
-                registerForm.style.display = "none";
-            })
-            .catch((error) => {
-                console.error("Error creating user document: ", error);
-                alert(error.message);
-            });
-        })
-        .catch((error) => {
-            console.error("Error creating user: ", error);
-            alert(error.message);
+            // Remove active class from all tabs and panes
+            tabs.forEach(t => t.classList.remove("active"));
+            tabPanes.forEach(p => p.classList.remove("active"));
+            
+            // Add active class to current tab and pane
+            tab.classList.add("active");
+            document.getElementById(tabId).classList.add("active");
         });
-}
+    });
 
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
-    
-    // Sign in with Firebase Auth
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // Successful login
-            document.getElementById("loginEmail").value = "";
-            document.getElementById("loginPassword").value = "";
-        })
-        .catch((error) => {
-            console.error("Error signing in: ", error);
-            alert(document.documentElement.lang === "ar" ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password");
-        });
-}
-
-function handleLogout() {
-    auth.signOut()
-        .then(() => {
+    // Check authentication state on load
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // User is signed in
+            db.collection("users").doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        loadUserData({
+                            name: userData.name,
+                            email: user.email,
+                            balance: userData.balance,
+                            cardNumber: userData.cardNumber,
+                            uid: user.uid
+                        });
+                    }
+                });
+        } else {
+            // User is signed out
             dashboard.style.display = "none";
             loginForm.style.display = "block";
-        })
-        .catch((error) => {
-            console.error("Error signing out: ", error);
-        });
-}
-
-function loadUserData(user) {
-    userNameDisplay.textContent = user.name;
-    balanceAmount.textContent = user.balance.toLocaleString();
-    cardHolderName.textContent = user.name;
-    lastFourDigits.textContent = user.cardNumber.slice(-4);
-    
-    // Store user data for quick access
-    sessionStorage.setItem("currentUserUid", user.uid);
-    
-    loadRecentTransactions(user.uid);
-    loadWalletBalances(user.uid);
-    
-    loginForm.style.display = "none";
-    registerForm.style.display = "none";
-    dashboard.style.display = "block";
-}
-
-function handleDeposit(e) {
-    e.preventDefault();
-    
-    const amount = parseFloat(document.getElementById("depositAmount").value);
-    if (isNaN(amount) || amount <= 0) {
-        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
-        return;
-    }
-    
-    const userUid = sessionStorage.getItem("currentUserUid");
-    const userRef = db.collection("users").doc(userUid);
-    
-    // Use a transaction to update the balance
-    db.runTransaction((transaction) => {
-        return transaction.get(userRef).then((userDoc) => {
-            if (!userDoc.exists) {
-                throw "User does not exist!";
-            }
-            
-            const userData = userDoc.data();
-            const newBalance = userData.balance + amount;
-            
-            transaction.update(userRef, { balance: newBalance });
-            
-            // Return the new balance for use in the next then()
-            return newBalance;
-        });
-    })
-    .then((newBalance) => {
-        // Add transaction record
-        addTransaction(userUid, "deposit", amount, null, null);
-        
-        // Update UI
-        balanceAmount.textContent = newBalance.toLocaleString();
-        
-        // Close modal and reset form
-        depositModal.style.display = "none";
-        document.getElementById("depositAmount").value = "";
-        
-        alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
-        
-        // Reload transactions
-        loadRecentTransactions(userUid);
-    })
-    .catch((error) => {
-        console.error("Transaction failed: ", error);
-        alert(error);
+        }
     });
-}
 
-function handleTransfer(e) {
-    e.preventDefault();
-    
-    const recipientEmail = document.getElementById("recipientEmail").value;
-    const amount = parseFloat(document.getElementById("transferAmount").value);
-    const note = document.getElementById("transferNote").value;
-    
-    if (isNaN(amount) || amount <= 0) {
-        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
-        return;
+    // Functions
+    function toggleForms(e) {
+        e.preventDefault();
+        loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
+        registerForm.style.display = registerForm.style.display === "none" ? "block" : "none";
     }
-    
-    const senderUid = sessionStorage.getItem("currentUserUid");
-    
-    // Get sender's current balance
-    db.collection("users").doc(senderUid).get()
-        .then(doc => {
-            if (!doc.exists) {
-                throw "Sender does not exist!";
-            }
-            
-            const senderData = doc.data();
-            
-            if (senderData.balance < amount) {
-                alert(document.documentElement.lang === "ar" ? "رصيد غير كافٍ" : "Insufficient balance");
-                return;
-            }
-            
-            // Find recipient by email
-            return db.collection("users").where("email", "==", recipientEmail).get();
-        })
-        .then(querySnapshot => {
-            if (querySnapshot.empty) {
-                alert(document.documentElement.lang === "ar" ? "المستلم غير موجود" : "Recipient not found");
-                throw "Recipient not found";
-            }
-            
-            // Get recipient document
-            const recipientDoc = querySnapshot.docs[0];
-            const recipientUid = recipientDoc.id;
-            
-            // Use batch write to ensure both operations occur
-            const batch = db.batch();
-            
-            // Update sender balance
-            const senderRef = db.collection("users").doc(senderUid);
-            batch.update(senderRef, {
-                balance: firebase.firestore.FieldValue.increment(-amount)
+
+    function handleRegister(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById("registerName").value;
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        
+        if (password !== confirmPassword) {
+            alert(document.documentElement.lang === "ar" ? "كلمة المرور غير متطابقة" : "Passwords do not match");
+            return;
+        }
+        
+        // Create user with Firebase Auth
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Create user document in Firestore
+                const user = userCredential.user;
+                const cardNumber = generateCardNumber();
+                
+                db.collection("users").doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    balance: 0,
+                    cardNumber: cardNumber,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                    // Create default wallets for the user
+                    createDefaultWallets(user.uid);
+                    
+                    alert(document.documentElement.lang === "ar" ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+                    loginForm.style.display = "block";
+                    registerForm.style.display = "none";
+                })
+                .catch((error) => {
+                    console.error("Error creating user document: ", error);
+                    alert(error.message);
+                });
+            })
+            .catch((error) => {
+                console.error("Error creating user: ", error);
+                alert(error.message);
             });
-            
-            // Update recipient balance
-            const recipientRef = db.collection("users").doc(recipientUid);
-            batch.update(recipientRef, {
-                balance: firebase.firestore.FieldValue.increment(amount)
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+        
+        // Sign in with Firebase Auth
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Successful login
+                document.getElementById("loginEmail").value = "";
+                document.getElementById("loginPassword").value = "";
+            })
+            .catch((error) => {
+                console.error("Error signing in: ", error);
+                alert(document.documentElement.lang === "ar" ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password");
             });
-            
-            // Commit the batch
-            return batch.commit().then(() => {
-                return {
-                    senderUid,
-                    recipientUid,
-                    recipientEmail
-                };
+    }
+
+    function handleLogout() {
+        auth.signOut()
+            .then(() => {
+                dashboard.style.display = "none";
+                loginForm.style.display = "block";
+            })
+            .catch((error) => {
+                console.error("Error signing out: ", error);
+            });
+    }
+
+    function loadUserData(user) {
+        userNameDisplay.textContent = user.name;
+        balanceAmount.textContent = user.balance.toLocaleString();
+        cardHolderName.textContent = user.name;
+        lastFourDigits.textContent = user.cardNumber.slice(-4);
+        
+        // Store user data for quick access
+        sessionStorage.setItem("currentUserUid", user.uid);
+        
+        loadRecentTransactions(user.uid);
+        loadWalletBalances(user.uid);
+        
+        loginForm.style.display = "none";
+        registerForm.style.display = "none";
+        dashboard.style.display = "block";
+    }
+
+    function handleDeposit(e) {
+        e.preventDefault();
+        
+        const amount = parseFloat(document.getElementById("depositAmount").value);
+        if (isNaN(amount) || amount <= 0) {
+            alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
+            return;
+        }
+        
+        const userUid = sessionStorage.getItem("currentUserUid");
+        const userRef = db.collection("users").doc(userUid);
+        
+        // Use a transaction to update the balance
+        db.runTransaction((transaction) => {
+            return transaction.get(userRef).then((userDoc) => {
+                if (!userDoc.exists) {
+                    throw "User does not exist!";
+                }
+                
+                const userData = userDoc.data();
+                const newBalance = userData.balance + amount;
+                
+                transaction.update(userRef, { balance: newBalance });
+                
+                // Return the new balance for use in the next then()
+                return newBalance;
             });
         })
-        .then(({senderUid, recipientUid, recipientEmail}) => {
-            // Add transaction records
-            addTransaction(senderUid, "sent", amount, recipientEmail, note);
-            addTransaction(recipientUid, "received", amount, auth.currentUser.email, note);
-            
-            // Get updated sender data
-            return db.collection("users").doc(senderUid).get();
-        })
-        .then(doc => {
-            const userData = doc.data();
+        .then((newBalance) => {
+            // Add transaction record
+            addTransaction(userUid, "deposit", amount, null, null);
             
             // Update UI
-            balanceAmount.textContent = userData.balance.toLocaleString();
+            balanceAmount.textContent = newBalance.toLocaleString();
             
             // Close modal and reset form
-            transferModal.style.display = "none";
-            document.getElementById("recipientEmail").value = "";
-            document.getElementById("transferAmount").value = "";
-            document.getElementById("transferNote").value = "";
+            depositModal.style.display = "none";
+            document.getElementById("depositAmount").value = "";
             
-            alert(document.documentElement.lang === "ar" ? "تم التحويل بنجاح" : "Transfer successful");
+            alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
             
             // Reload transactions
-            loadRecentTransactions(senderUid);
+            loadRecentTransactions(userUid);
         })
         .catch((error) => {
-            if (error !== "Recipient not found") {
-                console.error("Transfer failed: ", error);
-                alert(error);
-            }
+            console.error("Transaction failed: ", error);
+            alert(error);
         });
-}
+    }
 
-function addTransaction(userUid, type, amount, otherParty, note) {
-    return db.collection("transactions").add({
-        userUid,
-        type,
-        amount,
-        otherParty,
-        note,
-        date: firebase.firestore.FieldValue.serverTimestamp()
-    });
-}
+    function handleTransfer(e) {
+        e.preventDefault();
+        
+        const recipientEmail = document.getElementById("recipientEmail").value;
+        const amount = parseFloat(document.getElementById("transferAmount").value);
+        const note = document.getElementById("transferNote").value;
+        
+        if (isNaN(amount) || amount <= 0) {
+            alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
+            return;
+        }
+        
+        const senderUid = sessionStorage.getItem("currentUserUid");
+        
+        // Get sender's current balance
+        db.collection("users").doc(senderUid).get()
+            .then(doc => {
+                if (!doc.exists) {
+                    throw "Sender does not exist!";
+                }
+                
+                const senderData = doc.data();
+                
+                if (senderData.balance < amount) {
+                    alert(document.documentElement.lang === "ar" ? "رصيد غير كافٍ" : "Insufficient balance");
+                    return;
+                }
+                
+                // Find recipient by email
+                return db.collection("users").where("email", "==", recipientEmail).get();
+            })
+            .then(querySnapshot => {
+                if (querySnapshot.empty) {
+                    alert(document.documentElement.lang === "ar" ? "المستلم غير موجود" : "Recipient not found");
+                    throw "Recipient not found";
+                }
+                
+                // Get recipient document
+                const recipientDoc = querySnapshot.docs[0];
+                const recipientUid = recipientDoc.id;
+                
+                // Use batch write to ensure both operations occur
+                const batch = db.batch();
+                
+                // Update sender balance
+                const senderRef = db.collection("users").doc(senderUid);
+                batch.update(senderRef, {
+                    balance: firebase.firestore.FieldValue.increment(-amount)
+                });
+                
+                // Update recipient balance
+                const recipientRef = db.collection("users").doc(recipientUid);
+                batch.update(recipientRef, {
+                    balance: firebase.firestore.FieldValue.increment(amount)
+                });
+                
+                // Commit the batch
+                return batch.commit().then(() => {
+                    return {
+                        senderUid,
+                        recipientUid,
+                        recipientEmail
+                    };
+                });
+            })
+            .then(({senderUid, recipientUid, recipientEmail}) => {
+                // Add transaction records
+                addTransaction(senderUid, "sent", amount, recipientEmail, note);
+                addTransaction(recipientUid, "received", amount, auth.currentUser.email, note);
+                
+                // Get updated sender data
+                return db.collection("users").doc(senderUid).get();
+            })
+            .then(doc => {
+                const userData = doc.data();
+                
+                // Update UI
+                balanceAmount.textContent = userData.balance.toLocaleString();
+                
+                // Close modal and reset form
+                transferModal.style.display = "none";
+                document.getElementById("recipientEmail").value = "";
+                document.getElementById("transferAmount").value = "";
+                document.getElementById("transferNote").value = "";
+                
+                alert(document.documentElement.lang === "ar" ? "تم التحويل بنجاح" : "Transfer successful");
+                
+                // Reload transactions
+                loadRecentTransactions(senderUid);
+            })
+            .catch((error) => {
+                if (error !== "Recipient not found") {
+                    console.error("Transfer failed: ", error);
+                    alert(error);
+                }
+            });
+    }
 
-function loadRecentTransactions(userUid) {
-    db.collection("transactions")
-        .where("userUid", "==", userUid)
-        .orderBy("date", "desc")
-        .limit(5)
-        .get()
-        .then(querySnapshot => {
-            if (querySnapshot.empty) {
+    function addTransaction(userUid, type, amount, otherParty, note) {
+        return db.collection("transactions").add({
+            userUid,
+            type,
+            amount,
+            otherParty,
+            note,
+            date: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function loadRecentTransactions(userUid) {
+        db.collection("transactions")
+            .where("userUid", "==", userUid)
+            .orderBy("date", "desc")
+            .limit(5)
+            .get()
+            .then(querySnapshot => {
+                if (querySnapshot.empty) {
+                    transactionsList.innerHTML = `
+                        <div class="transaction-item">
+                            <div>
+                                <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                transactionsList.innerHTML = "";
+                
+                querySnapshot.forEach(doc => {
+                    const tx = doc.data();
+                    const date = tx.date ? tx.date.toDate() : new Date();
+                    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+                    
+                    const transactionItem = document.createElement("div");
+                    transactionItem.className = "transaction-item";
+                    
+                    let typeText, amountHTML;
+                    
+                    if (tx.type === "deposit") {
+                        typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
+                        amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                    } else if (tx.type === "sent") {
+                        typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
+                        typeText += ` ${tx.otherParty}`;
+                        amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
+                    } else if (tx.type === "received") {
+                        typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
+                        typeText += ` ${tx.otherParty}`;
+                        amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                    }
+                    
+                    transactionItem.innerHTML = `
+                        <div>
+                            <strong>${typeText}</strong>
+                            <div>${formattedDate}</div>
+                            ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
+                        </div>
+                        <div>
+                            ${amountHTML}
+                        </div>
+                    `;
+                    
+                    transactionsList.appendChild(transactionItem);
+                });
+            })
+            .catch(error => {
+                console.error("Error loading transactions: ", error);
                 transactionsList.innerHTML = `
                     <div class="transaction-item">
                         <div>
-                            <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                            <strong>Error loading transactions</strong>
                         </div>
                     </div>
                 `;
-                return;
-            }
-            
-            transactionsList.innerHTML = "";
-            
-            querySnapshot.forEach(doc => {
-                const tx = doc.data();
-                const date = tx.date ? tx.date.toDate() : new Date();
-                const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-                
-                const transactionItem = document.createElement("div");
-                transactionItem.className = "transaction-item";
-                
-                let typeText, amountHTML;
-                
-                if (tx.type === "deposit") {
-                    typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
-                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
-                } else if (tx.type === "sent") {
-                    typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
-                    typeText += ` ${tx.otherParty}`;
-                    amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
-                } else if (tx.type === "received") {
-                    typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
-                    typeText += ` ${tx.otherParty}`;
-                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+            });
+    }
+
+    function loadFullTransactionHistory() {
+        const userUid = sessionStorage.getItem("currentUserUid");
+        
+        db.collection("transactions")
+            .where("userUid", "==", userUid)
+            .orderBy("date", "desc")
+            .get()
+            .then(querySnapshot => {
+                if (querySnapshot.empty) {
+                    fullTransactionsList.innerHTML = `
+                        <div class="transaction-item">
+                            <div>
+                                <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                            </div>
+                        </div>
+                    `;
+                    return;
                 }
                 
-                transactionItem.innerHTML = `
-                    <div>
-                        <strong>${typeText}</strong>
-                        <div>${formattedDate}</div>
-                        ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
-                    </div>
-                    <div>
-                        ${amountHTML}
-                    </div>
-                `;
+                fullTransactionsList.innerHTML = "";
                 
-                transactionsList.appendChild(transactionItem);
-            });
-        })
-        .catch(error => {
-            console.error("Error loading transactions: ", error);
-            transactionsList.innerHTML = `
-                <div class="transaction-item">
-                    <div>
-                        <strong>Error loading transactions</strong>
-                    </div>
-                </div>
-            `;
-        });
-}
-
-function loadFullTransactionHistory() {
-    const userUid = sessionStorage.getItem("currentUserUid");
-    
-    db.collection("transactions")
-        .where("userUid", "==", userUid)
-        .orderBy("date", "desc")
-        .get()
-        .then(querySnapshot => {
-            if (querySnapshot.empty) {
-                fullTransactionsList.innerHTML = `
-                    <div class="transaction-item">
+                querySnapshot.forEach(doc => {
+                    const tx = doc.data();
+                    const date = tx.date ? tx.date.toDate() : new Date();
+                    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    
+                    const transactionItem = document.createElement("div");
+                    transactionItem.className = "transaction-item";
+                    
+                    let typeText, amountHTML;
+                    
+                    if (tx.type === "deposit") {
+                        typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
+                        amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                    } else if (tx.type === "sent") {
+                        typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
+                        typeText += ` ${tx.otherParty}`;
+                        amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
+                    } else if (tx.type === "received") {
+                        typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
+                        typeText += ` ${tx.otherParty}`;
+                        amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
+                    }
+                    
+                    transactionItem.innerHTML = `
                         <div>
-                            <strong data-ar="لا توجد معاملات" data-en="No transactions yet">لا توجد معاملات</strong>
+                            <strong>${typeText}</strong>
+                            <div>${formattedDate}</div>
+                            ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
                         </div>
-                    </div>
-                `;
-                return;
+                        <div>
+                            ${amountHTML}
+                        </div>
+                    `;
+                    
+                    fullTransactionsList.appendChild(transactionItem);
+                });
+            })
+            .catch(error => {
+                console.error("Error loading transaction history: ", error);
+            });
+    }
+
+    function createDefaultWallets(userUid) {
+        // Create Bitcoin wallet
+        db.collection("wallets").add({
+            userUid,
+            type: "BTC",
+            balance: 0,
+            address: generateWalletAddress("BTC"),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Create Ethereum wallet
+        db.collection("wallets").add({
+            userUid,
+            type: "ETH",
+            balance: 0,
+            address: generateWalletAddress("ETH"),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function loadWalletBalances(userUid) {
+        db.collection("wallets")
+            .where("userUid", "==", userUid)
+            .get()
+            .then(querySnapshot => {
+                querySnapshot.forEach(doc => {
+                    const wallet = doc.data();
+                    
+                    if (wallet.type === "BTC") {
+                        btcBalance.textContent = wallet.balance;
+                        btcAddress.textContent = wallet.address;
+                    } else if (wallet.type === "ETH") {
+                        ethBalance.textContent = wallet.balance;
+                        ethAddress.textContent = wallet.address;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Error loading wallets: ", error);
+            });
+    }
+
+    function generateCardNumber() {
+        let cardNumber = "4";
+        for (let i = 0; i < 15; i++) {
+            cardNumber += Math.floor(Math.random() * 10);
+        }
+        return cardNumber;
+    }
+
+    function generateWalletAddress(type) {
+        if (type === "BTC") {
+            const prefix = "bc1";
+            let address = prefix;
+            const chars = "qwertyuiopasdfghjklzxcvbnm1234567890";
+            for (let i = 0; i < 35; i++) {
+                address += chars[Math.floor(Math.random() * chars.length)];
             }
-            
-            fullTransactionsList.innerHTML = "";
-            
-            querySnapshot.forEach(doc => {
-                const tx = doc.data();
-                const date = tx.date ? tx.date.toDate() : new Date();
-                const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-                
-                const transactionItem = document.createElement("div");
-                transactionItem.className = "transaction-item";
-                
-                let typeText, amountHTML;
-                
-                if (tx.type === "deposit") {
-                    typeText = document.documentElement.lang === "ar" ? "إيداع" : "Deposit";
-                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
-                } else if (tx.type === "sent") {
-                    typeText = document.documentElement.lang === "ar" ? "تحويل إلى" : "Transfer to";
-                    typeText += ` ${tx.otherParty}`;
-                    amountHTML = `<span style="color: red;">-${tx.amount.toLocaleString()}</span>`;
-                } else if (tx.type === "received") {
-                    typeText = document.documentElement.lang === "ar" ? "استلام من" : "Received from";
-                    typeText += ` ${tx.otherParty}`;
-                    amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
-                }
-                
-                transactionItem.innerHTML = `
-                    <div>
-                        <strong>${typeText}</strong>
-                        <div>${formattedDate}</div>
-                        ${tx.note ? `<div><small>${tx.note}</small></div>` : ''}
-                    </div>
-                    <div>
-                        ${amountHTML}
-                    </div>
-                `;
-                
-                fullTransactionsList.appendChild(transactionItem);
-            });
-        })
-        .catch(error => {
-            console.error("Error loading transaction history: ", error);
-        });
-}
-
-function createDefaultWallets(userUid) {
-    // Create Bitcoin wallet
-    db.collection("wallets").add({
-        userUid,
-        type: "BTC",
-        balance: 0,
-        address: generateWalletAddress("BTC"),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Create Ethereum wallet
-    db.collection("wallets").add({
-        userUid,
-        type: "ETH",
-        balance: 0,
-        address: generateWalletAddress("ETH"),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-}
-
-function loadWalletBalances(userUid) {
-    db.collection("wallets")
-        .where("userUid", "==", userUid)
-        .get()
-        .then(querySnapshot => {
-            querySnapshot.forEach(doc => {
-                const wallet = doc.data();
-                
-                if (wallet.type === "BTC") {
-                    btcBalance.textContent = wallet.balance;
-                    btcAddress.textContent = wallet.address;
-                } else if (wallet.type === "ETH") {
-                    ethBalance.textContent = wallet.balance;
-                    ethAddress.textContent = wallet.address;
-                }
-            });
-        })
-        .catch(error => {
-            console.error("Error loading wallets: ", error);
-        });
-}
-
-function generateCardNumber() {
-    let cardNumber = "4";
-    for (let i = 0; i < 15; i++) {
-        cardNumber += Math.floor(Math.random() * 10);
-    }
-    return cardNumber;
-}
-
-function generateWalletAddress(type) {
-    if (type === "BTC") {
-        const prefix = "bc1";
-        let address = prefix;
-        const chars = "qwertyuiopasdfghjklzxcvbnm1234567890";
-        for (let i = 0; i < 35; i++) {
-            address += chars[Math.floor(Math.random() * chars.length)];
+            return address;
+        } else if (type === "ETH") {
+            const prefix = "0x";
+            let address = prefix;
+            const chars = "abcdef1234567890";
+            for (let i = 0; i < 40; i++) {
+                address += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return address;
         }
-        return address;
-    } else if (type === "ETH") {
-        const prefix = "0x";
-        let address = prefix;
-        const chars = "abcdef1234567890";
-        for (let i = 0; i < 40; i++) {
-            address += chars[Math.floor(Math.random() * chars.length)];
+        return "";
+    }
+
+    // Language toggle
+    window.toggleLanguage = function() {
+        const currentLang = document.body.classList.contains("rtl") ? "ar" : "en";
+        const newLang = currentLang === "ar" ? "en" : "ar";
+        
+        if (newLang === "en") {
+            document.body.classList.remove("rtl");
+            document.body.classList.add("ltr");
+            document.documentElement.lang = "en";
+            document.querySelector(".language-toggle").textContent = "العربية";
+        } else {
+            document.body.classList.remove("ltr");
+            document.body.classList.add("rtl");
+            document.documentElement.lang = "ar";
+            document.querySelector(".language-toggle").textContent = "English";
         }
-        return address;
-    }
-    return "";
-}
+        
+        // Update all elements with data-ar and data-en attributes
+        const elements = document.querySelectorAll("[data-ar][data-en]");
+        elements.forEach(el => {
+            el.textContent = el.getAttribute(`data-${newLang}`);
+        });
+    };
 
-// Language toggle
-function toggleLanguage() {
-    const currentLang = document.body.classList.contains("rtl") ? "ar" : "en";
-    const newLang = currentLang === "ar" ? "en" : "ar";
-    
-    if (newLang === "en") {
-        document.body.classList.remove("rtl");
-        document.body.classList.add("ltr");
-        document.documentElement.lang = "en";
-        document.querySelector(".language-toggle").textContent = "العربية";
-    } else {
-        document.body.classList.remove("ltr");
-        document.body.classList.add("rtl");
-        document.documentElement.lang = "ar";
-        document.querySelector(".language-toggle").textContent = "English";
-    }
-    
-    // Update all elements with data-ar and data-en attributes
-    const elements = document.querySelectorAll("[data-ar][data-en]");
-    elements.forEach(el => {
-        el.textContent = el.getAttribute(`data-${newLang}`);
-    });
-}
-
-// Window click event to close modals when clicking outside
-window.onclick = function(event) {
-    if (event.target === depositModal) {
-        depositModal.style.display = "none";
-    }
-    if (event.target === transferModal) {
-        transferModal.style.display = "none";
-    }
-    if (event.target === historyModal) {
-        historyModal.style.display = "none";
-    }
-};    </script>
+    // Window click event to close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target === depositModal) {
+            depositModal.style.display = "none";
+        }
+        if (event.target === transferModal) {
+            transferModal.style.display = "none";
+        }
+        if (event.target === historyModal) {
+            historyModal.style.display = "none";
+        }
+    };
+});   </script>
 </body>
 </html>
