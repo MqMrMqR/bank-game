@@ -489,20 +489,23 @@
     </div>
 
     <script>
-// Firebase Configuration and Initialization
-const firebaseConfig = {
-    apiKey: "AIzaSyDgLo1laAK8i4gsZ7FYkVCUJRi1uYNZnXo",
-    authDomain: "bankmqr.firebaseapp.com",
-    projectId: "bankmqr",
-    storageBucket: "bankmqr.firebasestorage.app",
-    messagingSenderId: "325807574746",
-    appId: "1:325807574746:web:6e77eb996fed4ef6941fe3",
-    measurementId: "G-K6DRK157FM"
-};
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAT0VfDrqizMR3y0QGmZc3WAzRGZ1xTcGo",
+    authDomain: "mqrbank-e0c06.firebaseapp.com",
+    projectId: "mqrbank-e0c06",
+    storageBucket: "mqrbank-e0c06.firebasestorage.app",
+    messagingSenderId: "677309991252",
+    appId: "1:677309991252:web:abc8e543219fb24856e0c1"
+  };
 
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
 // Initialize Firestore and Authentication
 const db = firebase.firestore();
 const auth = firebase.auth();
