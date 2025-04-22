@@ -1038,20 +1038,7 @@ function handleDeposit(e) {
     
     if (!isOnline) {
         // في حالة عدم الاتصال، قم بتخزين العملية محليًا للمزامنة لاحقًا
-        const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
-        pendingOperations.push({
-            type: "deposit",
-            amount: amount,
-            userUid: userUid,
-            timestamp: Date.now()
-        });
-        localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations));
-        
-        // تحديث واجهة المستخدم مؤقتًا
-        const currentBalance = parseFloat(balanceAmount.textContent.replace(/,/g, "")) || 0;
-        balanceAmount.textContent = (currentBalance + amount).toLocaleString();
-        
-        // إزالة مؤشر التحميل
+        storePendingDeposit(userUid, amount);
         depositModal.removeChild(loadingIndicator);
         depositModal.style.display = "none";
         document.getElementById("depositAmount").value = "";
@@ -1062,7 +1049,33 @@ function handleDeposit(e) {
         return;
     }
     
-    // استخدام معاملة لتحديث الرصيد
+    // اختبار الاتصال بـ Firestore أولاً
+    db.collection("_test_connection").doc("test")
+        .set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() })
+        .then(() => {
+            // الاتصال يعمل، متابعة عملية الإيداع
+            processDeposit(userUid, amount, loadingIndicator);
+        })
+        .catch((error) => {
+            console.error("فشل اختبار الاتصال بـ Firestore:", error);
+            
+            // تخزين العملية محليًا في حالة فشل الاتصال
+            storePendingDeposit(userUid, amount);
+            
+            depositModal.removeChild(loadingIndicator);
+            depositModal.style.display = "none";
+            document.getElementById("depositAmount").value = "";
+            
+            alert(document.documentElement.lang === "ar" ? 
+                  "تعذر الاتصال بالخادم. تم حفظ الإيداع محليًا وسيتم مزامنته لاحقًا." : 
+                  "Server connection failed. Deposit saved locally and will be synced later.");
+        });
+}
+
+// دالة لمعالجة الإيداع عند الاتصال بالخادم
+function processDeposit(userUid, amount, loadingIndicator) {
+    const userRef = db.collection("users").doc(userUid);
+    
     db.runTransaction((transaction) => {
         return transaction.get(userRef).then((userDoc) => {
             if (!userDoc.exists) {
@@ -1078,48 +1091,56 @@ function handleDeposit(e) {
         });
     })
     .then((newBalance) => {
-        // إضافة سجل المعاملة
         return addTransaction(userUid, "deposit", amount, null, null)
             .then(() => {
-                // تحديث واجهة المستخدم
                 balanceAmount.textContent = newBalance.toLocaleString();
                 
-                // إغلاق النافذة وإعادة تعيين النموذج
                 depositModal.removeChild(loadingIndicator);
                 depositModal.style.display = "none";
                 document.getElementById("depositAmount").value = "";
                 
                 alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
                 
-                // إعادة تحميل المعاملات
                 loadRecentTransactions(userUid);
             });
     })
     .catch((error) => {
         console.error("فشلت المعاملة: ", error);
         depositModal.removeChild(loadingIndicator);
-        alert(error);
         
-        // محاولة التخزين المحلي في حالة فشل الإيداع
-        try {
-            const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
-            pendingOperations.push({
-                type: "deposit",
-                amount: amount,
-                userUid: userUid,
-                timestamp: Date.now()
-            });
-            localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations));
-            
-            alert(document.documentElement.lang === "ar" ? 
-                  "تم حفظ الإيداع محليًا وسيتم مزامنته لاحقًا" : 
-                  "Deposit saved locally and will be synced later");
-        } catch (e) {
-            console.error("خطأ في تخزين العملية محليًا:", e);
-        }
+        // رسالة خطأ أكثر تفصيلاً
+        alert(document.documentElement.lang === "ar" ? 
+              `فشل الإيداع: ${error.code || error}` : 
+              `Deposit failed: ${error.code || error}`);
+        
+        // تخزين العملية محليًا في حالة الفشل
+        storePendingDeposit(userUid, amount);
     });
 }
-    function handleTransfer(e) {
+
+// دالة لتخزين الإيداع المعلق
+function storePendingDeposit(userUid, amount) {
+    try {
+        const pendingOperations = JSON.parse(localStorage.getItem("pendingOperations") || "[]");
+        pendingOperations.push({
+            type: "deposit",
+            amount: amount,
+            userUid: userUid,
+            timestamp: Date.now()
+        });
+        localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations));
+        
+        // تحديث واجهة المستخدم مؤقتًا
+        const currentBalance = parseFloat(balanceAmount.textContent.replace(/,/g, "")) || 0;
+        balanceAmount.textContent = (currentBalance + amount).toLocaleString();
+        
+        console.log("تم تخزين الإيداع المعلق بنجاح");
+    } catch (e) {
+        console.error("خطأ في تخزين العملية محليًا:", e);
+    }
+}
+
+function handleTransfer(e) {
         e.preventDefault();
         
         const recipientEmail = document.getElementById("recipientEmail").value;
