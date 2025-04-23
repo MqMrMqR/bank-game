@@ -479,9 +479,9 @@
                 <div class="form-group">
                   <label for="transferMethod" data-ar="طريقة التحويل" data-en="Transfer Method">طريقة التحويل</label>
                   <select id="transferMethod" required>
-                    <option value="email">📧 البريد الإلكتروني</option>
-                    <option value="username">👤 اسم المستخدم</option>
-                    <option value="payban">🆔 PayBan</option>
+                    <option value="email" data-ar="البريد الألكتروني" data-en="Email"> البريد الألكتروني </option>
+                    <option value="username" data-ar="اسم المستخدم" data-en="Username"> اسم المستخدم </option>
+                    <option value="payban" data-ar="باي بان" data-en="PayBan">باي بان</option>
                   </select>
                 </div>
               
@@ -1168,102 +1168,88 @@ function storePendingDeposit(userUid, amount) {
 }
 
 function handleTransfer(e) {
-        e.preventDefault();
-        
-        const recipientEmail = document.getElementById("recipientEmail").value;
-        const amount = parseFloat(document.getElementById("transferAmount").value);
-        const note = document.getElementById("transferNote").value;
-        
-        if (isNaN(amount) || amount <= 0) {
-            alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
-            return;
-        }
-        
-        const senderUid = sessionStorage.getItem("currentUserUid");
-        
-        // Get sender's current balance
-        db.collection("users").doc(senderUid).get()
-            .then(doc => {
-                if (!doc.exists) {
-                    throw "Sender does not exist!";
-                }
-                
-                const senderData = doc.data();
-                
-                if (senderData.balance < amount) {
-                    alert(document.documentElement.lang === "ar" ? "رصيد غير كافٍ" : "Insufficient balance");
-                    return;
-                }
-                
-                // Find recipient by email
-                return db.collection("users").where("email", "==", recipientEmail).get();
-            })
-            .then(querySnapshot => {
-                if (querySnapshot.empty) {
-                    alert(document.documentElement.lang === "ar" ? "المستلم غير موجود" : "Recipient not found");
-                    throw "Recipient not found";
-                }
-                
-                // Get recipient document
-                const recipientDoc = querySnapshot.docs[0];
-                const recipientUid = recipientDoc.id;
-                
-                // Use batch write to ensure both operations occur
-                const batch = db.batch();
-                
-                // Update sender balance
-                const senderRef = db.collection("users").doc(senderUid);
-                batch.update(senderRef, {
-                    balance: firebase.firestore.FieldValue.increment(-amount)
-                });
-                
-                // Update recipient balance
-                const recipientRef = db.collection("users").doc(recipientUid);
-                batch.update(recipientRef, {
-                    balance: firebase.firestore.FieldValue.increment(amount)
-                });
-                
-                // Commit the batch
-                return batch.commit().then(() => {
-                    return {
-                        senderUid,
-                        recipientUid,
-                        recipientEmail
-                    };
-                });
-            })
-            .then(({senderUid, recipientUid, recipientEmail}) => {
-                // Add transaction records
-                addTransaction(senderUid, "sent", amount, recipientEmail, note);
-                addTransaction(recipientUid, "received", amount, auth.currentUser.email, note);
-                
-                // Get updated sender data
-                return db.collection("users").doc(senderUid).get();
-            })
-            .then(doc => {
-                const userData = doc.data();
-                
-                // Update UI
-                balanceAmount.textContent = userData.balance.toLocaleString();
-                
-                // Close modal and reset form
-                transferModal.style.display = "none";
-                document.getElementById("recipientEmail").value = "";
-                document.getElementById("transferAmount").value = "";
-                document.getElementById("transferNote").value = "";
-                
-                alert(document.documentElement.lang === "ar" ? "تم التحويل بنجاح" : "Transfer successful");
-                
-                // Reload transactions
-                loadRecentTransactions(senderUid);
-            })
-            .catch((error) => {
-                if (error !== "Recipient not found") {
-                    console.error("Transfer failed: ", error);
-                    alert(error);
-                }
-            });
+  e.preventDefault();
+
+  const method = document.getElementById("transferMethod").value;
+  const recipientInput = document.getElementById("recipientInput").value.trim();
+  const amount = parseFloat(document.getElementById("transferAmount").value);
+  const note = document.getElementById("transferNote").value;
+  const senderUid = sessionStorage.getItem("currentUserUid");
+
+  if (isNaN(amount) || amount <= 0) {
+    alert("يرجى إدخال مبلغ صحيح");
+    return;
+  }
+
+  db.collection("users").doc(senderUid).get().then(senderDoc => {
+    if (!senderDoc.exists) throw "المرسل غير موجود";
+
+    const senderData = senderDoc.data();
+    if (senderData.balance < amount) {
+      alert("رصيد غير كافٍ");
+      throw "Insufficient balance";
     }
+
+    // نبدأ البحث عن المستلم حسب الطريقة المختارة
+    let query;
+    if (method === "email") {
+      query = db.collection("users").where("email", "==", recipientInput);
+    } else if (method === "username") {
+      query = db.collection("users").where("name", "==", recipientInput);
+    } else if (method === "payban") {
+      query = db.collection("users").where("payban", "==", recipientInput);
+    } else {
+      throw "طريقة التحويل غير معروفة";
+    }
+
+    return query.get().then(snapshot => {
+      if (snapshot.empty) {
+        alert("المستلم غير موجود");
+        throw "Recipient not found";
+      }
+
+      const recipientDoc = snapshot.docs[0];
+      const recipientUid = recipientDoc.id;
+
+      const batch = db.batch();
+      batch.update(db.collection("users").doc(senderUid), {
+        balance: firebase.firestore.FieldValue.increment(-amount)
+      });
+      batch.update(db.collection("users").doc(recipientUid), {
+        balance: firebase.firestore.FieldValue.increment(amount)
+      });
+
+      return batch.commit().then(() => ({
+        senderUid,
+        recipientUid,
+        recipientInfo: recipientInput
+      }));
+    });
+  }).then(({ senderUid, recipientUid, recipientInfo }) => {
+    // سجل المعاملة
+    const methodLabel = method === "email" ? "email"
+                      : method === "username" ? "username"
+                      : "payban";
+
+    addTransaction(senderUid, "sent", amount, `${methodLabel}:${recipientInfo}`, note);
+    addTransaction(recipientUid, "received", amount, "from:" + auth.currentUser.email, note);
+
+    // تحديث الواجهة
+    return db.collection("users").doc(senderUid).get();
+  }).then(updatedSender => {
+    balanceAmount.textContent = updatedSender.data().balance.toLocaleString();
+
+    transferModal.style.display = "none";
+    document.getElementById("recipientInput").value = "";
+    document.getElementById("transferAmount").value = "";
+    document.getElementById("transferNote").value = "";
+
+    alert("تم التحويل بنجاح");
+    loadRecentTransactions(senderUid);
+  }).catch(error => {
+    console.error("فشل التحويل:", error);
+  });
+}
 
 
 // إضافة هذه الدالة للتعامل مع إعادة الاتصال بـ Firebase
