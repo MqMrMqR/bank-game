@@ -462,12 +462,36 @@
             <h2 data-ar="إيداع أموال" data-en="Deposit Money">إيداع أموال</h2>
             <form id="depositForm">
                 <div class="form-group">
-                    <label for="depositAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
-                    <input type="number" id="depositAmount" min="1" required>
+                  <label for="depositType" data-ar="نوع الإيداع" data-en="Deposit Type">نوع الإيداع</label>
+                  <select id="depositType" required>
+                    <option value="bank" data-ar="رصيد بنكي" data-en="Bank">رصيد بنكي</option>
+                    <option value="crypto" data-ar="عملات رقمية" data-en="Crypto">عملات رقمية</option>
+                  </select>
                 </div>
-                <button type="submit" data-ar="إيداع" data-en="Deposit">إيداع</button>
-            </form>
-        </div>
+              
+                <div class="form-group" id="bankDepositGroup">
+                  <label for="depositAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                  <input type="number" id="depositAmount" min="1">
+                </div>
+              
+                <div class="form-group" id="cryptoDepositGroup" style="display: none;">
+                  <label for="cryptoType" data-ar="اختر العملة" data-en="Crypto Type">اختر العملة</label>
+                  <select id="cryptoType">
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                  </select>
+
+                  <div style="margin-top: 0.5rem;">
+                    <small id="cryptoDollarPreview" style="color: #666;"></small>
+                  </div>
+                  
+                  <label for="cryptoAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                  <input type="text" id="cryptoAmount" placeholder="مثال: 0.05">
+                </div>
+              
+                <button type="submit" data-ar="إيداع" data-en="Submit">إيداع</button>
+              </form>
+                      </div>
     </div>
 
     <!-- Transfer Modal -->
@@ -477,22 +501,58 @@
             <h2 data-ar="تحويل أموال" data-en="Transfer Money">تحويل أموال</h2>
             <form id="transferForm">
                 <div class="form-group">
-                  <label for="transferMethod" data-ar="طريقة التحويل" data-en="Transfer Method">طريقة التحويل</label>
-                  <select id="transferMethod" required>
-                    <option value="email" data-ar="البريد الألكتروني" data-en="Email"> البريد الألكتروني </option>
-                    <option value="username" data-ar="اسم المستخدم" data-en="Username"> اسم المستخدم </option>
-                    <option value="payban" data-ar="باي بان" data-en="PayBan">باي بان</option>
+                  <label for="transferType" data-ar="نوع التحويل" data-en="Transfer Type">نوع التحويل</label>
+                  <select id="transferType" required>
+                    <option value="bank" data-ar="بنكي (رصيد)" data-en="Bank">بنكي (رصيد)</option>
+                    <option value="crypto" data-ar="عملة رقمية" data-en="Crypto">عملة رقمية</option>
                   </select>
                 </div>
               
-                <div class="form-group">
-                  <label for="recipientInput" data-ar="المستلم" data-en="Recipient">المستلم</label>
-                  <input type="text" id="recipientInput" required>
+                <!-- تحويل بنكي -->
+                <div id="bankTransferGroup">
+                  <div class="form-group">
+                    <label for="transferMethod" data-ar="طريقة التحويل" data-en="Transfer Method">طريقة التحويل</label>
+                    <select id="transferMethod">
+                      <option value="email" data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</option>
+                      <option value="username" data-ar="اسم المستخدم" data-en="Username">اسم المستخدم</option>
+                      <option value="payban" data-ar="باي بان" data-en="PayBan">باي بان</option>
+                    </select>
+                  </div>
+              
+                  <div class="form-group">
+                    <label for="recipientInput" data-ar="المستلم" data-en="Recipient">المستلم</label>
+                    <input type="text" id="recipientInput">
+                  </div>
+              
+                  <div class="form-group">
+                    <label for="transferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                    <input type="number" id="transferAmount" min="1">
+                  </div>
                 </div>
               
-                <div class="form-group">
-                  <label for="transferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
-                  <input type="number" id="transferAmount" min="1" required>
+                <!-- تحويل عملة رقمية -->
+                <div id="cryptoTransferGroup" style="display: none;">
+                  <div class="form-group">
+                    <label for="cryptoCurrency" data-ar="العملة الرقمية" data-en="Crypto Currency">العملة الرقمية</label>
+                    <select id="cryptoCurrency">
+                      <option value="BTC">Bitcoin (BTC)</option>
+                      <option value="ETH">Ethereum (ETH)</option>
+                    </select>
+                  </div>
+              
+                  <div class="form-group">
+                    <label for="cryptoRecipient" data-ar="عنوان المحفظة" data-en="Crypto Address">عنوان المحفظة</label>
+                    <input type="text" id="cryptoRecipient" placeholder="مثل: bc1xyz أو 0xabc">
+                  </div>
+              
+                  <div class="form-group">
+                    <label for="cryptoTransferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                    <input type="text" id="cryptoTransferAmount" placeholder="مثال: 0.05">
+                  </div>
+              
+                  <div>
+                    <small id="cryptoUSDPreview" style="color: #666;"></small>
+                  </div>
                 </div>
               
                 <div class="form-group">
@@ -500,9 +560,9 @@
                   <input type="text" id="transferNote">
                 </div>
               
-                <button type="submit" data-ar="تحويل" data-en="Transfer">تحويل</button>
+                <button type="submit" data-ar="تحويل" data-en="Submit">تحويل</button>
               </form>
-              </div>
+                            </div>
     </div>
 
     <!-- History Modal -->
@@ -666,6 +726,10 @@ function initAuthPersistence() {
     const ethBalance = document.getElementById("ethBalance");
     const btcAddress = document.getElementById("btcAddress");
     const ethAddress = document.getElementById("ethAddress");
+    const transferType = document.getElementById("transferType");
+    const bankGroup = document.getElementById("bankTransferGroup");
+    const cryptoGroup = document.getElementById("cryptoTransferGroup");
+
 
     // لنضيف المزيد من سجلات التصحيح
     console.log("DOM Elements:", {
@@ -673,6 +737,13 @@ function initAuthPersistence() {
         registerForm: registerForm ? "Found" : "Not Found",
         dashboard: dashboard ? "Found" : "Not Found"
     });
+
+
+    transferType.addEventListener("change", () => {
+  const type = transferType.value;
+  bankGroup.style.display = type === "bank" ? "block" : "none";
+  cryptoGroup.style.display = type === "crypto" ? "block" : "none";
+});
 
     // Event Listeners
     document.getElementById("login").addEventListener("submit", handleLogin);
@@ -1037,66 +1108,82 @@ function loadUserData(user) {
 }
 
 function handleDeposit(e) {
-    e.preventDefault();
-    
+  e.preventDefault();
+
+  const type = document.getElementById("depositType").value;
+  const userUid = sessionStorage.getItem("currentUserUid");
+
+  if (!userUid) {
+    alert(document.documentElement.lang === "ar" ? "يرجى تسجيل الدخول أولاً" : "Please login first");
+    return;
+  }
+
+  if (type === "bank") {
     const amount = parseFloat(document.getElementById("depositAmount").value);
     if (isNaN(amount) || amount <= 0) {
-        alert(document.documentElement.lang === "ar" ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount");
-        return;
+      alert(document.documentElement.lang === "ar" ? "أدخل مبلغًا صحيحًا" : "Enter a valid amount");
+      return;
     }
-    
-    const userUid = sessionStorage.getItem("currentUserUid");
-    if (!userUid) {
-        alert(document.documentElement.lang === "ar" ? "يرجى تسجيل الدخول أولاً" : "Please login first");
-        return;
-    }
-    
-    // إظهار مؤشر التحميل
-    const loadingIndicator = document.createElement("div");
-    loadingIndicator.className = "loading-indicator";
-    loadingIndicator.textContent = document.documentElement.lang === "ar" ? "جاري معالجة الإيداع..." : "Processing deposit...";
-    depositModal.appendChild(loadingIndicator);
-    
+
     const userRef = db.collection("users").doc(userUid);
-    
-    // التحقق من حالة الاتصال قبل محاولة الإيداع
-    const isOnline = window.navigator.onLine;
-    console.log("حالة الاتصال بالإنترنت:", isOnline ? "متصل" : "غير متصل");
-    
-    if (!isOnline) {
-        // في حالة عدم الاتصال، قم بتخزين العملية محليًا للمزامنة لاحقًا
-        storePendingDeposit(userUid, amount);
-        depositModal.removeChild(loadingIndicator);
-        depositModal.style.display = "none";
-        document.getElementById("depositAmount").value = "";
-        
-        alert(document.documentElement.lang === "ar" ? 
-              "تم حفظ الإيداع محليًا وسيتم مزامنته عند استعادة الاتصال" : 
-              "Deposit saved locally and will be synced when connection is restored");
-        return;
+    db.runTransaction((transaction) => {
+      return transaction.get(userRef).then((userDoc) => {
+        if (!userDoc.exists) {
+          throw "User not found!";
+        }
+
+        const userData = userDoc.data();
+        const newBalance = userData.balance + amount;
+
+        transaction.update(userRef, { balance: newBalance });
+        return newBalance;
+      });
+    }).then((newBalance) => {
+      balanceAmount.textContent = newBalance.toLocaleString();
+      depositModal.style.display = "none";
+      document.getElementById("depositAmount").value = "";
+
+      // تسجيل المعاملة في السجل
+      addTransaction(userUid, "deposit", amount, null, document.documentElement.lang === "ar" ? "إيداع بنكي" : "Bank Deposit");
+
+      alert(document.documentElement.lang === "ar" ? "تم الإيداع بنجاح" : "Deposit successful");
+      loadRecentTransactions(userUid);
+    }).catch((error) => {
+      console.error("فشل الإيداع:", error);
+      alert(document.documentElement.lang === "ar" ? "فشل الإيداع" : "Deposit failed");
+    });
+
+  } else if (type === "crypto") {
+    const crypto = document.getElementById("cryptoType").value;
+    const amount = parseFloat(document.getElementById("cryptoAmount").value.replace(",", "."));
+
+    if (isNaN(amount) || amount <= 0) {
+      alert(document.documentElement.lang === "ar" ? "أدخل مبلغًا صحيحًا للعملة الرقمية" : "Enter a valid crypto amount");
+      return;
     }
-    
-    // اختبار الاتصال بـ Firestore أولاً
-    db.collection("_test_connection").doc("test")
-        .set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() })
-        .then(() => {
-            // الاتصال يعمل، متابعة عملية الإيداع
-            processDeposit(userUid, amount, loadingIndicator);
-        })
-        .catch((error) => {
-            console.error("فشل اختبار الاتصال بـ Firestore:", error);
-            
-            // تخزين العملية محليًا في حالة فشل الاتصال
-            storePendingDeposit(userUid, amount);
-            
-            depositModal.removeChild(loadingIndicator);
-            depositModal.style.display = "none";
-            document.getElementById("depositAmount").value = "";
-            
-            alert(document.documentElement.lang === "ar" ? 
-                  "تعذر الاتصال بالخادم. تم حفظ الإيداع محليًا وسيتم مزامنته لاحقًا." : 
-                  "Server connection failed. Deposit saved locally and will be synced later.");
-        });
+
+    const walletRef = db.collection("wallets").doc(`${userUid}_${crypto}`);
+    walletRef.update({
+      balance: firebase.firestore.FieldValue.increment(amount)
+    }).then(() => {
+      depositModal.style.display = "none";
+      document.getElementById("cryptoAmount").value = "";
+
+      // تسجيل المعاملة في السجل
+      addTransaction(userUid, "crypto_deposit", amount, crypto, document.documentElement.lang === "ar" ?
+        `إيداع عملة ${crypto}` :
+        `Crypto deposit: ${crypto}`);
+
+      loadWalletBalances(userUid);
+
+      alert(document.documentElement.lang === "ar" ?
+        `تم إيداع ${amount} ${crypto}` :
+        `Successfully deposited ${amount} ${crypto}`);
+    }).catch(error => {
+      console.error("فشل إيداع العملة:", error);
+      alert(document.documentElement.lang === "ar" ? "فشل إيداع العملة الرقمية" : "Crypto deposit failed");
+    });
+  }
 }
 
 // دالة لمعالجة الإيداع عند الاتصال بالخادم
@@ -1175,6 +1262,60 @@ function handleTransfer(e) {
   const amount = parseFloat(document.getElementById("transferAmount").value);
   const note = document.getElementById("transferNote").value;
   const senderUid = sessionStorage.getItem("currentUserUid");
+  const transferType = document.getElementById("transferType").value;
+
+if (transferType === "crypto") {
+  const currency = document.getElementById("cryptoCurrency").value;
+  const toAddress = document.getElementById("cryptoRecipient").value.trim();
+  const amount = parseFloat(document.getElementById("cryptoTransferAmount").value.replace(",", "."));
+
+  if (!toAddress || isNaN(amount) || amount <= 0) {
+    alert("تحقق من صحة البيانات");
+    return;
+  }
+
+  const walletRef = db.collection("wallets").doc(`${senderUid}_${currency}`);
+  walletRef.get().then(doc => {
+    if (!doc.exists || doc.data().balance < amount) {
+      throw "رصيد غير كافٍ";
+    }
+
+    // إذا العنوان موجود في المنصة → ننقله داخلياً
+    return db.collection("wallets")
+      .where("address", "==", toAddress)
+      .where("type", "==", currency)
+      .get();
+  }).then(snapshot => {
+    const userWalletRef = db.collection("wallets").doc(`${senderUid}_${currency}`);
+    const batch = db.batch();
+
+    // خصم من المرسل
+    batch.update(userWalletRef, {
+      balance: firebase.firestore.FieldValue.increment(-amount)
+    });
+
+    if (!snapshot.empty) {
+      // تم التحويل لمستخدم داخل المنصة
+      const recipientDoc = snapshot.docs[0];
+      batch.update(recipientDoc.ref, {
+        balance: firebase.firestore.FieldValue.increment(amount)
+      });
+    }
+
+    return batch.commit().then(() => {
+      addTransaction(senderUid, "crypto_sent", amount, `${currency}:${toAddress}`, note);
+      alert("تم التحويل بنجاح");
+      transferModal.style.display = "none";
+      loadWalletBalances(senderUid);
+      loadRecentTransactions(senderUid);
+    });
+  }).catch(error => {
+    console.error("فشل تحويل العملة:", error);
+    alert("فشل التحويل");
+  });
+
+  return;
+}
 
   if (isNaN(amount) || amount <= 0) {
     alert("يرجى إدخال مبلغ صحيح");
@@ -1386,7 +1527,13 @@ setupReconnectionHandler();
                         typeText += ` ${tx.otherParty}`;
                         amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
                     }
-                    
+                    else if (tx.type === "crypto_deposit") {
+  typeText = document.documentElement.lang === "ar"
+    ? `إيداع عملة ${tx.otherParty}`
+    : `Crypto deposit (${tx.otherParty})`;
+  amountHTML = `<span style="color: green;">+${tx.amount}</span>`;
+}
+
                     transactionItem.innerHTML = `
                         <div>
                             <strong>${typeText}</strong>
@@ -1456,7 +1603,13 @@ setupReconnectionHandler();
                         typeText += ` ${tx.otherParty}`;
                         amountHTML = `<span style="color: green;">+${tx.amount.toLocaleString()}</span>`;
                     }
-                    
+                    else if (tx.type === "crypto_deposit") {
+  typeText = document.documentElement.lang === "ar"
+    ? `إيداع عملة ${tx.otherParty}`
+    : `Crypto deposit (${tx.otherParty})`;
+  amountHTML = `<span style="color: green;">+${tx.amount}</span>`;
+}
+
                     transactionItem.innerHTML = `
                         <div>
                             <strong>${typeText}</strong>
@@ -1614,6 +1767,53 @@ setupReconnectionHandler();
             historyModal.style.display = "none";
         }
     };
+
+
+    document.getElementById("depositType").addEventListener("change", function () {
+  const type = this.value;
+  document.getElementById("bankDepositGroup").style.display = type === "bank" ? "block" : "none";
+  document.getElementById("cryptoDepositGroup").style.display = type === "crypto" ? "block" : "none";
+});
+
+
+
+
+
+document.getElementById("cryptoAmount").addEventListener("input", async () => {
+  const crypto = document.getElementById("cryptoType").value;
+  const amount = parseFloat(document.getElementById("cryptoAmount").value.replace(",", "."));
+  const preview = document.getElementById("cryptoDollarPreview");
+
+  if (isNaN(amount) || amount <= 0) {
+    preview.textContent = "";
+    return;
+  }
+
+  const rates = {
+    BTC: 64000,  // افترض السعر الحالي
+    ETH: 3100
+  };
+
+  const dollarValue = (amount * rates[crypto]).toFixed(2);
+  preview.textContent = document.documentElement.lang === "ar"
+    ? `${amount} ${crypto} ≈ ${dollarValue} دولار`
+    : `${amount} ${crypto} ≈ $${dollarValue} USD`;
+});
+
+
+
+document.getElementById("cryptoTransferAmount").addEventListener("input", () => {
+  const currency = document.getElementById("cryptoCurrency").value;
+  const amount = parseFloat(document.getElementById("cryptoTransferAmount").value.replace(",", "."));
+  const rate = { BTC: 64000, ETH: 3100 };
+  const usd = (rate[currency] * amount).toFixed(2);
+  const label = document.documentElement.lang === "ar"
+    ? `${amount} ${currency} ≈ ${usd}$`
+    : `${amount} ${currency} ≈ $${usd}`;
+  document.getElementById("cryptoUSDPreview").textContent = isNaN(amount) ? "" : label;
+});
+
+
 });   </script>
 </body>
 </html>
