@@ -387,7 +387,11 @@
                 <h3 data-ar="الرصيد الحالي" data-en="Current Balance">الرصيد الحالي</h3>
                 <div class="balance"><span id="balanceAmount">0</span> <span class="currency" data-ar="ريال" data-en="SAR">ريال</span></div>
             </div>
-
+            <div style="margin-top: 1rem;">
+                <strong data-ar="باي بان:" data-en="PayBan:">باي بان:</strong>
+                <div id="paybanDisplay" style="font-family: monospace; background: #f5f5f5; padding: 0.5rem; border-radius: 4px;"></div>
+            </div>
+            
             <div class="actions">
                 <div class="action-item" id="depositBtn">
                     <div class="action-icon">💰</div>
@@ -473,20 +477,32 @@
             <h2 data-ar="تحويل أموال" data-en="Transfer Money">تحويل أموال</h2>
             <form id="transferForm">
                 <div class="form-group">
-                    <label for="recipientEmail" data-ar="بريد المستلم" data-en="Recipient Email">بريد المستلم</label>
-                    <input type="email" id="recipientEmail" required>
+                  <label for="transferMethod" data-ar="طريقة التحويل" data-en="Transfer Method">طريقة التحويل</label>
+                  <select id="transferMethod" required>
+                    <option value="email">📧 البريد الإلكتروني</option>
+                    <option value="username">👤 اسم المستخدم</option>
+                    <option value="payban">🆔 PayBan</option>
+                  </select>
                 </div>
+              
                 <div class="form-group">
-                    <label for="transferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
-                    <input type="number" id="transferAmount" min="1" required>
+                  <label for="recipientInput" data-ar="المستلم" data-en="Recipient">المستلم</label>
+                  <input type="text" id="recipientInput" required>
                 </div>
+              
                 <div class="form-group">
-                    <label for="transferNote" data-ar="ملاحظة" data-en="Note">ملاحظة</label>
-                    <input type="text" id="transferNote">
+                  <label for="transferAmount" data-ar="المبلغ" data-en="Amount">المبلغ</label>
+                  <input type="number" id="transferAmount" min="1" required>
                 </div>
+              
+                <div class="form-group">
+                  <label for="transferNote" data-ar="ملاحظة" data-en="Note">ملاحظة</label>
+                  <input type="text" id="transferNote">
+                </div>
+              
                 <button type="submit" data-ar="تحويل" data-en="Transfer">تحويل</button>
-            </form>
-        </div>
+              </form>
+              </div>
     </div>
 
     <!-- History Modal -->
@@ -717,6 +733,7 @@ function initAuthPersistence() {
                         email: user.email,
                         balance: userData.balance,
                         cardNumber: userData.cardNumber,
+                        payban: userData.payban, // أضف هذا السطر
                         uid: user.uid
                     });
                 } else {
@@ -737,6 +754,7 @@ function initAuthPersistence() {
                             email: user.email,
                             balance: 0,
                             cardNumber: cardNumber,
+                            payban: userData.payban, // أضف هذا السطر
                             uid: user.uid
                         });
                     });
@@ -811,13 +829,16 @@ function initAuthPersistence() {
             const user = userCredential.user;
             const cardNumber = generateCardNumber();
             
-            return db.collection("users").doc(user.uid).set({
-                name: name,
-                email: email,
-                balance: 0,
-                cardNumber: cardNumber,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
+            const payban = generatePayBan();
+
+return db.collection("users").doc(user.uid).set({
+    name: name,
+    email: email,
+    balance: 0,
+    cardNumber: cardNumber,
+    payban: payban,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+})
             .then(() => {
                 // Create default wallets for the user
                 return createDefaultWallets(user.uid);
@@ -1010,7 +1031,8 @@ function loadUserData(user) {
     if (navigator.onLine) {
         syncPendingOperations();
     }
-    
+    document.getElementById("paybanDisplay").textContent = user.payban || "غير متوفر";
+
     console.log("تم تحميل بيانات المستخدم بنجاح وتم عرض لوحة التحكم");
 }
 
@@ -1525,6 +1547,11 @@ setupReconnectionHandler();
         }
         return cardNumber;
     }
+    function generatePayBan() {
+    const prefix = "mqR#";
+    const randomNumber = Math.floor(1000 + Math.random() * 9000); // يعطيك رقم عشوائي 4 خانات
+    return prefix + randomNumber;
+}
 
     function generateWalletAddress(type) {
         if (type === "BTC") {
